@@ -1,0 +1,47 @@
+version: "3"
+
+services: # containers
+  # Limits the amount of GPUs used by the container
+  mo444:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    build:
+      # Changes the current folder for docker-compose
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - user_name=john_doe
+        - user_id=1015 # ** [TODO] REPLACE BY YOUR USER ID TO AVOID PERMISSION ISSUES **
+
+    container_name: mo444
+    image: mo444
+    # Restart policies
+    restart: unless-stopped
+
+    # Logging configuration for the service
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+
+    ports:
+      - "8888:8888" # Jupyter
+      - "6006:6006" # TensorBoard
+
+    environment:
+      - DISPLAY=${DISPLAY} # Binds display
+
+    volumes:
+      # If one changes the binding volume, would be necessy to
+      # update the ARG-SETTING session of the Dockerfile
+      - ../../mo444_machine_learning_and_pattern_recognition/homework/2/:/home/john_doe/project/
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+
+    command: /opt/conda/envs/mo444/bin/jupyter-lab --ip='0.0.0.0' --port=8888 --no-browser

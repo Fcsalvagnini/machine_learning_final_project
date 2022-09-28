@@ -17,7 +17,7 @@ services: # containers
       dockerfile: ./Dockerfile
       args:
         - user_name=john_doe
-        - user_id=1015 # ** [TODO] REPLACE BY YOUR USER ID TO AVOID PERMISSION ISSUES **
+        - user_id=1000 # ** [TODO] REPLACE BY YOUR USER ID TO AVOID PERMISSION ISSUES **
 
     container_name: mo444
     image: mo444
@@ -40,7 +40,8 @@ services: # containers
     volumes:
       # If one changes the binding volume, would be necessy to
       # update the ARG-SETTING session of the Dockerfile
-      - ../../mo444_machine_learning_and_pattern_recognition/homework/2/:/home/john_doe/project/
+      - ../:/home/john_doe/project
+      - ../../msc_repo/datasets/:/home/john_doe/project/datasets
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
 

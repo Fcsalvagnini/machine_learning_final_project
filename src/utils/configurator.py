@@ -19,6 +19,18 @@ class Configurations(metaclass=ABCMeta):
                     )
                     continue
                 setattr(self, config_name, config_value)
+                
+    def log(self, logger, parent_attr=""):
+        for attr in self.__dict__:
+            if isinstance(getattr(self, attr), Configurations):
+                nested_class = getattr(self, attr)
+                nested_class.log(logger, parent_attr=f"[{attr}]")
+                continue
+        
+            log_message = ""
+            log_message += parent_attr
+            log_message += f"[{attr}]: {getattr(self, attr)}"
+            logger.info(log_message)
 
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
@@ -30,10 +42,12 @@ class DataLoaderConfigs(Configurations):
 
 class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
+        self.model_tag: str = ""
         self.epochs: int = 100
         self.batch_size: int = 8
         self.loss: str = "RMSE"
         self.optimizer: str = "SGD"
+        self.logging_level: str = "INFO"
 
         self.data_loader: Configurations = DataLoaderConfigs(configurations={})
 

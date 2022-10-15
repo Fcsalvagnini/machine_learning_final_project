@@ -1,0 +1,13 @@
+train_configs:
+  model: nnU-Net Nvidia
+  logging_level: INFO
+  epochs: 1000
+  batch_size: 16
+  loss: PSNR
+  optimizer: ADAM
+  data_loader:
+    augment: true
+    augmentations:
+      - flip
+      - rotate
+    patch_training: true

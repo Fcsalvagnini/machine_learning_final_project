@@ -17,19 +17,16 @@ class Conv3DBlock(nn.Module):
             bias=bias, padding_mode=padding_mode
         )
 
-        if normalization:
-            self.norm_layer = normalization
-
-        if activation:
-            self.activation = activation
+        self.norm_layer = normalization
+        self.activation = activation
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv3d_layer(x)
 
-        if hasattr(self, "norm_layer"):
+        if self.norm_layer:
             x = self.norm_layer(x)
 
-        if hasattr(self, "activation"):
+        if self.activation:
             x = self.activation(x)
 
         return x

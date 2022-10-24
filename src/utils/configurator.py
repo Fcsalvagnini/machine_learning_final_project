@@ -19,14 +19,14 @@ class Configurations(metaclass=ABCMeta):
                     )
                     continue
                 setattr(self, config_name, config_value)
-                
+
     def log(self, logger, parent_attr=""):
         for attr in self.__dict__:
             if isinstance(getattr(self, attr), Configurations):
                 nested_class = getattr(self, attr)
                 nested_class.log(logger, parent_attr=f"[{attr}]")
                 continue
-        
+
             log_message = ""
             log_message += parent_attr
             log_message += f"[{attr}]: {getattr(self, attr)}"
@@ -57,6 +57,19 @@ class DataConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.data_paths:list = []
         self.data_descriptors:list = []
+
+        self.setattrs(configurations=configurations)
+
+class EncoderConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.block = ENCONDER_BLOCKS[]
+
+class ModelConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.depth: int = 3
+        self.encoder: Configurations = EncoderConfigs(configurations={})
+        self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
+        self.decoder: Configurations = DecoderConfigs(configurations={})
 
         self.setattrs(configurations=configurations)
 

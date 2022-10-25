@@ -1,5 +1,5 @@
 from typing import Dict, List
-from xmlrpc.client import Boolean
+import logging
 import yaml
 from abc import ABCMeta, abstractclassmethod
 
@@ -20,7 +20,7 @@ class Configurations(metaclass=ABCMeta):
                     continue
                 setattr(self, config_name, config_value)
 
-    def log(self, logger, parent_attr=""):
+    def log(self, logger: logging.Logger, parent_attr:str="") -> None:
         for attr in self.__dict__:
             if isinstance(getattr(self, attr), Configurations):
                 nested_class = getattr(self, attr)
@@ -34,9 +34,9 @@ class Configurations(metaclass=ABCMeta):
 
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.augment: Boolean = False
+        self.augment: bool = False
         self.augmentations: List = []
-        self.patch_training: Boolean = False
+        self.patch_training: bool = False
 
         self.setattrs(configurations=configurations)
 
@@ -61,6 +61,13 @@ class DataConfigs(Configurations):
         self.setattrs(configurations=configurations)
 
 class EncoderConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.block = ENCONDER_BLOCKS[]
+
+class SkipConnectionConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.block = ENCONDER_BLOCKS[]
+class DecoderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.block = ENCONDER_BLOCKS[]
 

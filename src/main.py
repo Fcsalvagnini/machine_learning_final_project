@@ -1,4 +1,4 @@
-from ast import arg
+from typing import Dict
 import torch
 import logging
 import argparse
@@ -8,16 +8,16 @@ import yaml
 from utils.global_vars import LOGGING_LEVEL
 from utils.configurator import TrainConfigs
 
-def train(configs):        
+def train(configs: Dict) -> None:
     train_configs = TrainConfigs(configs["train_configs"])
-    
+
     logging.basicConfig(
-        stream=sys.stdout, 
+        stream=sys.stdout,
         level=LOGGING_LEVEL[train_configs.logging_level]
     )
     logger = logging.getLogger(name="TRAIN")
     logger.info(
-        f"Starting Training Experiment with model {train_configs.model}"
+        f"Starting Training Experiment with model {train_configs.model_tag}"
     )
     train_configs.log(logger)
 
@@ -30,9 +30,9 @@ if __name__ == "__main__":
     parser.add_argument("mode", help="Execution mode (train or test)")
     parser.add_argument("config_file", help="Path to configuration file (YAML)")
     args = parser.parse_args()
-    
+
     with open(args.config_file) as yaml_file:
         configs = yaml.load(yaml_file, Loader=yaml.FullLoader)
-    
+
     if args.mode == "train":
-        train(configs)       
+        train(configs)

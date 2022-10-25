@@ -1,0 +1,10 @@
+albumentations==1.2.0
+monai==1.0.1
+opencv-python>=4.6
+Pillow>=9.0.0
+timm==0.5.4
+torch==1.12.0
+torchaudio==0.12.0
+torchvision==0.13.0
+tqdm==4.64.0
+wandb==0.12.19

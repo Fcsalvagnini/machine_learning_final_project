@@ -1,3 +1,4 @@
 *.png
+*.nii.gz
 misc/
 __pycache__/

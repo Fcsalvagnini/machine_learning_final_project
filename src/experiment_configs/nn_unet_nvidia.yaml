@@ -5,6 +5,13 @@ train_configs:
   batch_size: 16
   loss: PSNR
   optimizer: ADAM
+  scheduler:
+    scheduler_fn: WarmupCosineSchedule
+    from_monai: true
+    scheduler_kwargs:
+      warmup_steps: 10
+      t_total: 100
+      cycles: 0.5
   data_loader:
     augment: true
     augmentations:
@@ -13,56 +20,56 @@ train_configs:
     patch_training: true
 
 
-model: nvidia_nnunet
-  depth: 7
-  encoder:
-    conv_block_1: # Full-Size or Patch Size Input (F, C, H, W) e.g. (64, 128, 128, 128)
-      - conv_1:
-        - input_ch: 2
-        - output_ch: 96
-        - size: [3, 3, 3]
-        - stride: [2, 2, 2]
-        - padding: 1
-      - normalization_1: InstanceNorm
-        - num_features: 96
-        - eps: 1.e-05
-        - momentum: 0.1
-      - activation_1: LeakyReLU
-        - negative_slope: 0.1
-      - conv_2:
-        - input_ch: 96
-        - output_ch: 96
-        - size: [3, 3, 3]
-        - stride: [1, 1, 1]
-        - padding: 1
-      - normalization_2: InstanceNorm
-        - num_features: 96
-        - eps: 1.e-05
-        - momentum: 0.1
-      - activation_2: LeakyReLU
-        - negative_slope: 0.1
-    conv_block_2: # (F, C/2, H/2, W/2) e.g. (96, 64, 64, 64)
-      - conv_1:
-        - input_ch: 96
-        - output_ch: 128
-        - size: [3, 3, 3]
-        - stride: [2, 2, 2]
-        - padding: 1
-      - normalization_1: InstanceNorm
-        - num_features: 128
-        - eps: 1.e-05
-        - momentum: 0.1
-      - activation_1: LeakyReLU
-        - negative_slope: 0.1
-      - conv_2:
-        - input_ch: 128
-        - output_ch: 128
-        - size: [3, 3, 3]
-        - stride: [1, 1, 1]
-        - padding: 1
-      - normalization_2: InstanceNorm
-        - num_features: 128
-        - eps: 1.e-05
-        - momentum: 0.1
-      - activation_2: LeakyReLU
-        - negative_slope: 0.1
+# model: nvidia_nnunet
+#   depth: 7
+#   encoder:
+#     conv_block_1: # Full-Size or Patch Size Input (F, C, H, W) e.g. (64, 128, 128, 128)
+#       - conv_1:
+#         - input_ch: 2
+#         - output_ch: 96
+#         - size: [3, 3, 3]
+#         - stride: [2, 2, 2]
+#         - padding: 1
+#       - normalization_1: InstanceNorm
+#         - num_features: 96
+#         - eps: 1.e-05
+#         - momentum: 0.1
+#       - activation_1: LeakyReLU
+#         - negative_slope: 0.1
+#       - conv_2:
+#         - input_ch: 96
+#         - output_ch: 96
+#         - size: [3, 3, 3]
+#         - stride: [1, 1, 1]
+#         - padding: 1
+#       - normalization_2: InstanceNorm
+#         - num_features: 96
+#         - eps: 1.e-05
+#         - momentum: 0.1
+#       - activation_2: LeakyReLU
+#         - negative_slope: 0.1
+#     conv_block_2: # (F, C/2, H/2, W/2) e.g. (96, 64, 64, 64)
+#       - conv_1:
+#         - input_ch: 96
+#         - output_ch: 128
+#         - size: [3, 3, 3]
+#         - stride: [2, 2, 2]
+#         - padding: 1
+#       - normalization_1: InstanceNorm
+#         - num_features: 128
+#         - eps: 1.e-05
+#         - momentum: 0.1
+#       - activation_1: LeakyReLU
+#         - negative_slope: 0.1
+#       - conv_2:
+#         - input_ch: 128
+#         - output_ch: 128
+#         - size: [3, 3, 3]
+#         - stride: [1, 1, 1]
+#         - padding: 1
+#       - normalization_2: InstanceNorm
+#         - num_features: 128
+#         - eps: 1.e-05
+#         - momentum: 0.1
+#       - activation_2: LeakyReLU
+#         - negative_slope: 0.1

@@ -1,7 +1,9 @@
+from abc import ABCMeta, abstractclassmethod
 from typing import Dict, List
 from xmlrpc.client import Boolean
+
 import yaml
-from abc import ABCMeta, abstractclassmethod
+
 
 class Configurations(metaclass=ABCMeta):
     @abstractclassmethod
@@ -60,16 +62,24 @@ class DataConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
-class EncoderConfigs(Configurations):
-    def __init__(self, configurations: Dict) -> None:
-        self.block = ENCONDER_BLOCKS[]
+# class EncoderConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.block = ENCONDER_BLOCKS[]
 
-class ModelConfigs(Configurations):
+# class ModelConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.depth: int = 3
+#         self.encoder: Configurations = EncoderConfigs(configurations={})
+#         self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
+#         self.decoder: Configurations = DecoderConfigs(configurations={})
+
+#         self.setattrs(configurations=configurations)
+
+class SchedulerConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.depth: int = 3
-        self.encoder: Configurations = EncoderConfigs(configurations={})
-        self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
-        self.decoder: Configurations = DecoderConfigs(configurations={})
+        self.scheduler_fn: str = ''
+        self.from_monai: bool = False
+        self.scheduler_kwargs: Dict = {}
 
         self.setattrs(configurations=configurations)
 

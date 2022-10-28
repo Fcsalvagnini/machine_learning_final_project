@@ -12,13 +12,6 @@ from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 from . import JsonHandler
 from .voxel_preprocessing import BrainPreProcess
 from src.augmentation.augmentations import AugmentationPipeline
-"""
-TODO:
-    [ ] - augmentations
-        [ ] - methods?
-        [ ] - must the mask be passed as well?
-    [X] - ToTensor -> output from preprocess is already a torch.Tensor
-"""   
 
 class BrainDataset(Dataset):
     def __init__(

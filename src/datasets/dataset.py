@@ -5,7 +5,7 @@ import os
 
 from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
-
+from torchvision import transforms
 from typing import Dict, List
 from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
@@ -68,17 +68,19 @@ class BrainDataset(Dataset):
         
         x_brats = self.brain_preprocess.prepare_nib_data(
             images_path=x_brats_files, 
-            preprocess_fn=fn_random_spatial_crop
+            preprocess_fn=fn_random_spatial_crop,
+            as_torch_tensor=True
         )
         
         y_brats = self.brain_preprocess.prepare_nib_data(
             images_path=y_brats_file,
-            preprocess_fn=fn_random_spatial_crop
+            preprocess_fn=fn_random_spatial_crop,
+            as_torch_tensor=True
         )
          
         if self._transforms:
             raise NotImplementedError("Augmentation method not implemented yet.")
-        
+
         return x_brats, y_brats 
 
 
@@ -89,7 +91,7 @@ class BrainDataset(Dataset):
 if __name__ == "__main__":
     dataset_kwargs = {
         "json_path": "src/data/descriptors/test.json",
-        "data_path": "datasets",
+        "data_path": "database",
         "num_concat": 4,
         "transforms": None,
         "voxel_homo_size":  128
@@ -99,13 +101,13 @@ if __name__ == "__main__":
     
     dataloader = DataLoader(
         dataset,
-        batch_size=1,
+        batch_size=4,
         num_workers=2,
         shuffle=False
     )
 
     interator = iter(dataloader)
     x, y = next(interator)
-    print("x shape: ", x.shape)
-    print("y shape: ", y.shape)
+    print("x shape: ", x.shape, "type: ", type(x), " ", x.dtype)
+    print("y shape: ", y.shape, "type: ", type(y), " ", y.dtype)
     

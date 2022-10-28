@@ -34,6 +34,7 @@ class Configurations(metaclass=ABCMeta):
             log_message += f"[{attr}]: {getattr(self, attr)}"
             logger.info(log_message)
 
+
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.augment: Boolean = False
@@ -41,6 +42,7 @@ class DataLoaderConfigs(Configurations):
         self.patch_training: Boolean = False
 
         self.setattrs(configurations=configurations)
+
 
 class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
@@ -55,12 +57,14 @@ class TrainConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
+
 class DataConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.data_paths:list = []
-        self.data_descriptors:list = []
+        self.data_paths: list = []
+        self.data_descriptors: list = []
 
         self.setattrs(configurations=configurations)
+
 
 # class EncoderConfigs(Configurations):
 #     def __init__(self, configurations: Dict) -> None:
@@ -75,13 +79,22 @@ class DataConfigs(Configurations):
 
 #         self.setattrs(configurations=configurations)
 
+
 class SchedulerConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.scheduler_fn: str = ''
+        self.scheduler_fn: str = ""
         self.from_monai: bool = False
         self.scheduler_kwargs: Dict = {}
 
         self.setattrs(configurations=configurations)
+
+
+class AugmentationsConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.augmentations: Dict = {}
+
+        self.setattrs(configurations=configurations)
+
 
 if __name__ == "__main__":
     # Parses the experiment configurations

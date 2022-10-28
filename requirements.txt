@@ -8,3 +8,4 @@ timm==0.5.4
 #torchvision==0.13.0
 tqdm==4.64.0
 wandb==0.12.19
+nibabel==4.0.2

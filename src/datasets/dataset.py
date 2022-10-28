@@ -1,4 +1,5 @@
 
+from multiprocessing.sharedctypes import Value
 import nibabel as nib 
 import os
 
@@ -6,62 +7,105 @@ from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
 
 from typing import Dict, List
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
 from . import JsonHandler
-
-from utils import define_brats_types_idxs, prepare_nib_data
+from .voxel_preprocessing import BrainPreProcess
 
 """
 TODO:
     [ ] - augmentations
-    [ ] - ToTensor
-    [ ] - Test with real data
-"""
+        [ ] - methods?
+        [ ] - must the mask be passed as well?
+    [X] - ToTensor -> output from preprocess is already a torch.Tensor
+"""   
 
 class BrainDataset(Dataset):
     def __init__(
         self, 
-        data_file: Union[str, Path],
+        json_path: Union[str, Path],
         data_path: Union[str, Path],
-        num_concat: int = 2,
+        num_concat: Literal[2, 4] = 2,
         transforms: Optional[Callable] = None,
-        crop_size: Tuple[int, int, int] = (128, 128, 128)
+        voxel_homo_size: int = 128
         ) -> None:
-        self.data_file = data_file
-        self.data_path = data_path
-        self.num_concat = num_concat 
-        self.transforms = transforms
-        self.crop_size = crop_size
+        self._json_path = json_path
+        self._data_path = data_path
+        self._num_concat = num_concat 
+        self._transforms = transforms
+        self._voxel_homo_size = voxel_homo_size
 
         self.brats_types = ["flair", "t1", "t1ce", "t2"]
         self.gt_brats_types = ["seg"]
         
-        self.brats_ids = self._get_phase_ids() 
+        self._brats_ids = self._get_phase_ids() 
+        self._brats_types_concat = self._get_brats_types_concat()
         
+        self.brain_preprocess = BrainPreProcess()
 
     def _get_phase_ids(self) -> List:
         return JsonHandler.parse_json_to_dict(
-            json_path=os.path.join(self.data_path, self.data_path)
-        )
+            json_path=self._json_path)["ids"]
+    
+    def _get_brats_types_concat(self):
+        if self._num_concat == 2:
+            return ["flair", "t1ce"]
+        elif self._num_concat == 4:
+            return ["flair", "t1", "t1ce", "t2"]
+        else:
+            raise ValueError(f"num_concat variable must be 2 or 4. Value passed is: {self._num_concat}")
     
     def __getitem__(self, idx) -> Sequence:
-        brats_id = self.brats_ids[idx]
-        x_brats_types_chosen = list(map(lambda idx: self.brats_types[idx], define_brats_types_idxs(self.num_concat)))
-        x_brats_files = list(map(lambda brats_type: os.path.join(
-            self.data_path, f"{brats_id}/{brats_id}_{brats_type}.nii.gz"), 
-            x_brats_types_chosen))
-        x_brats = prepare_nib_data(images_path=x_brats_files, voxel_homo_size=128)
+        brats_id = self._brats_ids[idx]
         
-        y_brats_file = os.path.join(self.data_path, f"{brats_id}/{brats_id}_seg.nii.gz")
-        y_brats = prepare_nib_data(images_path=y_brats_file, voxel_homo_size=128)
+        x_brats_files = list(map(lambda brats_type: os.path.join(
+            self._data_path, f"{brats_id}/{brats_id}_{brats_type}.nii.gz"), 
+            self._brats_types_concat))
+        y_brats_file = list(map(lambda gt_brats_type: 
+            os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
+        
+        fn_random_spatial_crop = self.brain_preprocess.random_spatial_crop(self._voxel_homo_size)
+        
+        x_brats = self.brain_preprocess.prepare_nib_data(
+            images_path=x_brats_files, 
+            preprocess_fn=fn_random_spatial_crop
+        )
+        
+        y_brats = self.brain_preprocess.prepare_nib_data(
+            images_path=y_brats_file,
+            preprocess_fn=fn_random_spatial_crop
+        )
          
-        if self.transforms:
+        if self._transforms:
             raise NotImplementedError("Augmentation method not implemented yet.")
-
-        #return 
+        
+        return x_brats, y_brats 
 
 
     def __len__(self) -> int:
-        return len(self.brats_id)
-        
+        return len(self._brats_ids)
+
+
+if __name__ == "__main__":
+    dataset_kwargs = {
+        "json_path": "src/data/descriptors/test.json",
+        "data_path": "datasets",
+        "num_concat": 4,
+        "transforms": None,
+        "voxel_homo_size":  128
+    }
+    
+    dataset = BrainDataset(**dataset_kwargs)
+    
+    dataloader = DataLoader(
+        dataset,
+        batch_size=1,
+        num_workers=2,
+        shuffle=False
+    )
+
+    interator = iter(dataloader)
+    x, y = next(interator)
+    print("x shape: ", x.shape)
+    print("y shape: ", y.shape)
+    

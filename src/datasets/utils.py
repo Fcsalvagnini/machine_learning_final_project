@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import monai as mn
 import nibabel as nib 
 import numpy as np
+import torch
 import random
 
 from typing import Dict, List
@@ -13,30 +14,27 @@ from src.utils.viewers.viewer_2d import multi_slice_viewer
 
 
 def nib_load_images(image_path: str) -> np.ndarray:
-
     voxel_nii = nib.load(image_path)
-    voxel_np = np.asarray(voxel_nii.get_fdata(dtype=np.float32))
+    voxel_data = voxel_nii.get_data() #.dataobj
+    voxel_np = np.asarray(voxel_data)
     return voxel_np
 
 def prepare_nib_data(
     images_path: List[str],
     voxel_homo_size: int = 128
     ) -> np.ndarray:
-    voxels = list(map(nib_load_images, images_path)) #List[np.ndarray, np.ndarray]
+    voxels = list(map(lambda img: nib_load_images(img), images_path)) #List[np.ndarray, np.ndarray]
     if (voxel_homo_size):
-        # Add new dimension -> voxels.shape == (1, 240, 240, 155)
         voxels = list(map(lambda voxel: np.expand_dims(voxel, axis=0), voxels))
         crop = random_spatial_crop(voxel_homo_size=voxel_homo_size)
-        # cropped voxels
-        voxels = list(map(crop, voxels))
-        # [ ] - check voxels dimension, so far I think it's not needed to remove dimension
-        #voxels = list(map(lambda voxel: voxel.squeeze(), voxels))
 
+        voxels = list(map(lambda voxel: crop(voxel), voxels))
+    
     if len(images_path) > 1:
-        conc_voxel = concatenate_voxel(voxels)
+        conc_voxel = concatenate_voxel(voxels)    
         return conc_voxel
     else:
-        return voxels
+        return voxels[0]
 
 
 def random_spatial_crop(voxel_homo_size: int = 128) -> Callable:
@@ -49,10 +47,10 @@ def random_spatial_crop(voxel_homo_size: int = 128) -> Callable:
 
 
 def concatenate_voxel(*voxels: List[np.ndarray], axis: int=0) -> np.ndarray:
-    return np.concatenate([*voxels], axis=axis)
+    return torch.cat(*voxels, axis=axis)
 
 
-def define_brats_types_idxs(num: int = 2) -> List[int]:
+def define_brats_types_idxs(num: int = 2) -> List[int]: 
     indeces = []
     while len(indeces) < num:
         rnd = random.randint(0, 3)

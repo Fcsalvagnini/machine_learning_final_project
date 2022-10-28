@@ -15,8 +15,23 @@ train_configs:
   data_loader:
     augment: true
     augmentations:
-      - flip
-      - rotate
+      RandGaussianNoised:
+        apply_on_label: false
+        prob: 1.0
+        mean: 10.0
+        std: 0.99
+      RandAffined:
+        apply_on_label: true
+        mode: ["bilinear", "nearest"]
+        prob: 1.0
+        spatial_size: [240, 240, 155]
+        translate_range: [40, 40, 2]
+        rotate_range: [0.087, 0.087, 0.786]
+        scale_range: [0.15, 0.15, 0.15]
+        padding_mode: "border"
+      GaussianSmoothd:
+        apply_on_label: false
+        sigma: 1
     patch_training: true
 
 

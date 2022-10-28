@@ -1,7 +1,8 @@
+from abc import ABCMeta, abstractclassmethod
 from typing import Dict, List
 import logging
 import yaml
-from abc import ABCMeta, abstractclassmethod
+
 
 class Configurations(metaclass=ABCMeta):
     @abstractclassmethod
@@ -32,6 +33,7 @@ class Configurations(metaclass=ABCMeta):
             log_message += f"[{attr}]: {getattr(self, attr)}"
             logger.info(log_message)
 
+
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.augment: bool = False
@@ -39,6 +41,7 @@ class DataLoaderConfigs(Configurations):
         self.patch_training: bool = False
 
         self.setattrs(configurations=configurations)
+
 
 class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
@@ -53,16 +56,34 @@ class TrainConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
+
 class DataConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.data_paths:list = []
-        self.data_descriptors:list = []
+        self.data_paths: list = []
+        self.data_descriptors: list = []
 
         self.setattrs(configurations=configurations)
 
-class EncoderConfigs(Configurations):
+
+# class EncoderConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.block = ENCONDER_BLOCKS[]
+
+# class ModelConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.depth: int = 3
+#         self.encoder: Configurations = EncoderConfigs(configurations={})
+#         self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
+#         self.decoder: Configurations = DecoderConfigs(configurations={})
+
+#         self.setattrs(configurations=configurations)
+
+
+class SchedulerConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.block = ENCONDER_BLOCKS[]
+        self.scheduler_fn: str = ""
+        self.from_monai: bool = False
+        self.scheduler_kwargs: Dict = {}
 
 class SkipConnectionConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
@@ -73,12 +94,10 @@ class DecoderConfigs(Configurations):
 
 class ModelConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.depth: int = 3
-        self.encoder: Configurations = EncoderConfigs(configurations={})
-        self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
-        self.decoder: Configurations = DecoderConfigs(configurations={})
+        self.augmentations: Dict = {}
 
         self.setattrs(configurations=configurations)
+
 
 if __name__ == "__main__":
     # Parses the experiment configurations

@@ -13,26 +13,31 @@ train_configs:
       t_total: 100
       cycles: 0.5
   data_loader:
-    augment: true
-    augmentations:
-      RandGaussianNoised:
-        apply_on_label: false
-        prob: 1.0
-        mean: 10.0
-        std: 0.99
-      RandAffined:
-        apply_on_label: true
-        mode: ["bilinear", "nearest"]
-        prob: 1.0
-        spatial_size: [240, 240, 155]
-        translate_range: [40, 40, 2]
-        rotate_range: [0.087, 0.087, 0.786]
-        scale_range: [0.15, 0.15, 0.15]
-        padding_mode: "border"
-      GaussianSmoothd:
-        apply_on_label: false
-        sigma: 1
-    patch_training: true
+    dataset:
+      data_path: "database"
+      num_concat: 4 # 2 or 4
+      voxel_homog_size: 128
+      transforms:
+        augmentations:
+          RandGaussianNoised:
+            apply_on_label: false
+            prob: 1.0
+            mean: 10.0
+            std: 0.99
+          RandAffined:
+            apply_on_label: true
+            mode: ["bilinear", "nearest"]
+            prob: 1.0
+            spatial_size: [240, 240, 155]
+            translate_range: [40, 40, 2]
+            rotate_range: [0.087, 0.087, 0.786]
+            scale_range: [0.15, 0.15, 0.15]
+            padding_mode: "border"
+          GaussianSmoothd:
+            apply_on_label: false
+            sigma: 1
+      
+      patch_training: true
 
 
 # model: nvidia_nnunet

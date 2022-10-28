@@ -11,7 +11,7 @@ from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
 from . import JsonHandler
 from .voxel_preprocessing import BrainPreProcess
-
+from src.augmentation.augmentations import AugmentationPipeline
 """
 TODO:
     [ ] - augmentations
@@ -23,21 +23,27 @@ TODO:
 class BrainDataset(Dataset):
     def __init__(
         self, 
-        json_path: Union[str, Path],
-        data_path: Union[str, Path],
+        cfg: Dict,
+        phase: Literal["train", "valid", "test"],
         num_concat: Literal[2, 4] = 2,
-        transforms: Optional[Callable] = None,
-        voxel_homo_size: int = 128
+        #data_path: Union[str, Path],
+        #transforms: Optional[Callable] = None,
+        #voxel_homog_size: int = 128
         ) -> None:
-        self._json_path = json_path
-        self._data_path = data_path
+        print(cfg)
+        self._phase = phase
         self._num_concat = num_concat 
-        self._transforms = transforms
-        self._voxel_homo_size = voxel_homo_size
+        self._data_path = cfg.data_path
+        self._transforms = cfg.transforms
+        self._voxel_homog_size = cfg.voxel_homog_size
 
         self.brats_types = ["flair", "t1", "t1ce", "t2"]
         self.gt_brats_types = ["seg"]
         
+        print(self._transforms.augmentations)
+        
+
+        self._transforms = AugmentationPipeline(cfg.transforms.augmentations)
         self._brats_ids = self._get_phase_ids() 
         self._brats_types_concat = self._get_brats_types_concat()
         
@@ -45,7 +51,7 @@ class BrainDataset(Dataset):
 
     def _get_phase_ids(self) -> List:
         return JsonHandler.parse_json_to_dict(
-            json_path=self._json_path)["ids"]
+            phase=self._phase)["ids"]
     
     def _get_brats_types_concat(self):
         if self._num_concat == 2:
@@ -64,7 +70,7 @@ class BrainDataset(Dataset):
         y_brats_file = list(map(lambda gt_brats_type: 
             os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
         
-        fn_random_spatial_crop = self.brain_preprocess.random_spatial_crop(self._voxel_homo_size)
+        fn_random_spatial_crop = self.brain_preprocess.random_spatial_crop(self._voxel_homog_size)
         
         x_brats = self.brain_preprocess.prepare_nib_data(
             images_path=x_brats_files, 
@@ -79,7 +85,8 @@ class BrainDataset(Dataset):
         )
          
         if self._transforms:
-            raise NotImplementedError("Augmentation method not implemented yet.")
+            #raise NotImplementedError("Augmentation method not implemented yet.")
+            x_brats, y_brats = self._transforms(x_brats, y_brats)
 
         return x_brats, y_brats 
 
@@ -90,14 +97,20 @@ class BrainDataset(Dataset):
 
 if __name__ == "__main__":
     dataset_kwargs = {
-        "json_path": "src/data/descriptors/test.json",
+        "phase": "test",
         "data_path": "database",
         "num_concat": 4,
         "transforms": None,
-        "voxel_homo_size":  128
+        "voxel_homog_size":  128
     }
-    
-    dataset = BrainDataset(**dataset_kwargs)
+    from src.utils.yaml.yaml_handler import YamlHandler
+    from src.utils.configurator import DatasetConfigs
+    cfg = YamlHandler.parse_yaml_to_dict("nn_unet_nvidia.yaml")
+    #print(cfg)
+    ds_cfg = DatasetConfigs(cfg["train_configs"]["data_loader"]["dataset"])
+    print(ds_cfg.__dict__)
+
+    dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)
     
     dataloader = DataLoader(
         dataset,
@@ -108,6 +121,5 @@ if __name__ == "__main__":
 
     interator = iter(dataloader)
     x, y = next(interator)
-    print("x shape: ", x.shape, "type: ", type(x), " ", x.dtype)
-    print("y shape: ", y.shape, "type: ", type(y), " ", y.dtype)
+    
     

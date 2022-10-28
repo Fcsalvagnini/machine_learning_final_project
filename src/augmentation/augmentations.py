@@ -32,7 +32,8 @@ class AugmentationPipeline:
 
     def __call__(self, image, label):
         data_dict = {"image": image, "label": label}
-        data_dict = self._channel_first(data_dict)
+        
+        # data_dict = self._channel_first(data_dict)
         for aug in self._pipeline:
             data_dict = aug(data_dict)
         return data_dict["image"], data_dict["label"]

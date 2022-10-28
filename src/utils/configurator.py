@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractclassmethod
 from typing import Dict, List
-import logging
+from xmlrpc.client import Boolean
+
 import yaml
 
 
@@ -21,7 +22,7 @@ class Configurations(metaclass=ABCMeta):
                     continue
                 setattr(self, config_name, config_value)
 
-    def log(self, logger: logging.Logger, parent_attr:str="") -> None:
+    def log(self, logger, parent_attr=""):
         for attr in self.__dict__:
             if isinstance(getattr(self, attr), Configurations):
                 nested_class = getattr(self, attr)
@@ -34,12 +35,34 @@ class Configurations(metaclass=ABCMeta):
             logger.info(log_message)
 
 
+
+class AugmentationsConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.augmentations: Dict = {}
+
+        self.setattrs(configurations=configurations)
+
+
+class DatasetConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        # self.augment: Boolean = False
+        # self.augmentations: List = []
+        # self.patch_training: Boolean = False
+        self.data_path: str = None
+        self.phase: str = None
+        self.voxel_homog_size: int = 128
+        self.transforms: Configurations = AugmentationsConfigs(configurations={})
+
+        self.setattrs(configurations=configurations)
+
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.augment: bool = False
+        self.augment: Boolean = False
         self.augmentations: List = []
-        self.patch_training: bool = False
-
+        self.patch_training: Boolean = False
+        
+        self.dataset: Configurations = DataConfigs(configurations = {}) 
+        
         self.setattrs(configurations=configurations)
 
 
@@ -85,12 +108,22 @@ class SchedulerConfigs(Configurations):
         self.from_monai: bool = False
         self.scheduler_kwargs: Dict = {}
 
-class SkipConnectionConfigs(Configurations):
+        self.setattrs(configurations=configurations)
+
+
+class SchedulerConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.block = ENCONDER_BLOCKS[]
-class DecoderConfigs(Configurations):
-    def __init__(self, configurations: Dict) -> None:
-        self.block = ENCONDER_BLOCKS[]
+        self.scheduler_fn: str = ""
+        self.from_monai: bool = False
+        self.scheduler_kwargs: Dict = {}
+
+# class SkipConnectionConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.block = ENCONDER_BLOCKS[]
+
+# class DecoderConfigs(Configurations):
+#     def __init__(self, configurations: Dict) -> None:
+#         self.block = ENCONDER_BLOCKS[]
 
 class ModelConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:

@@ -28,7 +28,7 @@ train_configs:
             apply_on_label: true
             mode: ["bilinear", "nearest"]
             prob: 1.0
-            spatial_kernel_size: [240, 240, 155]
+            # spatial_kernel_size: [240, 240, 155]
             translate_range: [40, 40, 2]
             rotate_range: [0.087, 0.087, 0.786]
             scale_range: [0.15, 0.15, 0.15]

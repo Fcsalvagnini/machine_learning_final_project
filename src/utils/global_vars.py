@@ -1,7 +1,7 @@
 # Global variables (Dict mappings)
 import logging
 import torch
-from models.building_blocks import Conv3DBlock
+from src.models.building_blocks import Conv3DBlock
 
 LOGGING_LEVEL = {
     "DEBUG": logging.DEBUG,

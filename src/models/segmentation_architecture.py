@@ -1,7 +1,8 @@
-from utils.configurator import ModelConfigs
-from utils.global_vars import BUILDING_BLOCKS, NORMALIZATIONS, ACTIVATIONS
 import torch
 from torch import nn
+
+from src.utils.configurator import ModelConfigs
+from src.utils.global_vars import BUILDING_BLOCKS, NORMALIZATIONS, ACTIVATIONS
 
 class SegmentationModel(nn.Module):
     def __init__(self, model_configs) -> None:

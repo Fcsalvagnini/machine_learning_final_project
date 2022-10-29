@@ -5,14 +5,25 @@ import argparse
 import sys
 import yaml
 
-from utils.global_vars import LOGGING_LEVEL
-from utils.configurator import TrainConfigs
-from models.segmentation_architecture import get_model
+from src.utils.global_vars import LOGGING_LEVEL
+from src.utils.configurator import DataConfigs, TrainConfigs, DatasetConfigs
+from src.models.segmentation_architecture import get_model
+from src.datasets.dataset import BrainDataset
+
+from torch.utils.data import DataLoader
 import numpy as np
 
 def train(configs: Dict) -> None:
     train_configs = TrainConfigs(configs["train_configs"])
-
+    train_dataset_configs = DatasetConfigs(configs["train_configs"]["data_loader"]["dataset"])
+    train_dataset = BrainDataset(
+        cfg=train_dataset_configs,
+        phase="train",
+        num_concat=2
+    )
+    
+    train_dataloader = DataLoader(train_dataset, batch_size=2)
+    
     logging.basicConfig(
         stream=sys.stdout,
         level=LOGGING_LEVEL[train_configs.logging_level]
@@ -26,8 +37,11 @@ def train(configs: Dict) -> None:
     model = get_model(configs)
 
     array = torch.Tensor(np.ones((4, 2, 128, 128, 128)))
+    array.to("cuda")
+    model.to("cuda")
 
-    model(array)
+    y = model(array)
+    print(y)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

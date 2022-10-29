@@ -71,9 +71,11 @@ class SegmentationModel(nn.Module):
         zip(
             self.decoder_layers, self.skip_connections[::-1], intermediate_representations[::-1]
         ):
+            first_block = True
             for decoder_block in decoder_layer:
-                if skip:
+                if skip and first_block:
                     x = torch.concat([x, intermediate_representation], dim=1)
+                    first_block = False
                 x = decoder_block.forward(x)
 
         return x

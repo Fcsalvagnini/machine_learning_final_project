@@ -303,7 +303,7 @@ model:
         scale_factor: 2
     conv_3D_block_3: # Outputs (B, 192, 16, 16, 16)
       conv_1:
-        in_channels: 256
+        in_channels: 512
         out_channels: 256
         kernel_size: [3, 3, 3]
         stride: [1, 1, 1]
@@ -337,7 +337,7 @@ model:
         scale_factor: 2
     conv_3D_block_4: # Outputs (B, 128, 32, 32, 32)
       conv_1:
-        in_channels: 192
+        in_channels: 384
         out_channels: 192
         kernel_size: [3, 3, 3]
         stride: [1, 1, 1]
@@ -371,7 +371,7 @@ model:
         scale_factor: 2
     conv_3D_block_5: # Outputs (B, 96, 64, 64, 64)
       conv_1:
-        in_channels: 128
+        in_channels: 256
         out_channels: 128
         kernel_size: [3, 3, 3]
         stride: [1, 1, 1]
@@ -405,7 +405,7 @@ model:
         scale_factor: 2
     conv_3D_block_6: # Outputs (B, 64, 128, 128, 128)
       conv_1:
-        in_channels: 96
+        in_channels: 192
         out_channels: 96
         kernel_size: [3, 3, 3]
         stride: [1, 1, 1]
@@ -439,7 +439,7 @@ model:
         scale_factor: 2
     conv_3D_block_7: # Outputs (B, 2, 128, 128, 128)
       conv_1:
-        in_channels: 64
+        in_channels: 128
         out_channels: 64
         kernel_size: [3, 3, 3]
         stride: [1, 1, 1]

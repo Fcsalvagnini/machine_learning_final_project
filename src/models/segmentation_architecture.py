@@ -69,7 +69,7 @@ class SegmentationModel(nn.Module):
 
         for decoder_layer, skip, intermediate_representation in \
         zip(
-            self.decoder_layers.reverse(), self.skip_connections.reverse(), intermediate_representations
+            self.decoder_layers, self.skip_connections[::-1], intermediate_representations[::-1]
         ):
             for decoder_block in decoder_layer:
                 if skip:

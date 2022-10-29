@@ -7,6 +7,8 @@ import yaml
 
 from utils.global_vars import LOGGING_LEVEL
 from utils.configurator import TrainConfigs
+from models.segmentation_architecture import get_model
+import numpy as np
 
 def train(configs: Dict) -> None:
     train_configs = TrainConfigs(configs["train_configs"])
@@ -20,6 +22,12 @@ def train(configs: Dict) -> None:
         f"Starting Training Experiment with model {train_configs.model_tag}"
     )
     train_configs.log(logger)
+
+    model = get_model(configs)
+
+    array = torch.Tensor(np.ones((4, 2, 128, 128, 128)))
+
+    model(array)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

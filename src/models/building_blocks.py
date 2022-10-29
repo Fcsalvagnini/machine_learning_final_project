@@ -8,7 +8,7 @@ class Conv3DBlock(nn.Module):
             kernel_size: Union[int, tuple], stride: Union[int, tuple] = 1,
             padding: Union[int, tuple] = 0, padding_mode: str = "zeros",
             bias: bool = True, normalization: nn.Module = None,
-            activation: nn.Module = None
+            activation: nn.Module = None, upsampling: nn.Module = None
     ) -> None:
         super().__init__()
         self.conv3d_layer = nn.Conv3d(
@@ -19,6 +19,7 @@ class Conv3DBlock(nn.Module):
 
         self.norm_layer = normalization
         self.activation = activation
+        self.upsampling = upsampling
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv3d_layer(x)
@@ -28,5 +29,8 @@ class Conv3DBlock(nn.Module):
 
         if self.activation:
             x = self.activation(x)
+
+        if self.upsampling:
+            x = self.upsampling(x)
 
         return x

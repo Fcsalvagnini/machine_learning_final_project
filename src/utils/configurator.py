@@ -1,9 +1,6 @@
 from abc import ABCMeta, abstractclassmethod
 from typing import Dict, List
-from xmlrpc.client import Boolean
-
 import yaml
-
 
 class Configurations(metaclass=ABCMeta):
     @abstractclassmethod
@@ -34,20 +31,14 @@ class Configurations(metaclass=ABCMeta):
             log_message += f"[{attr}]: {getattr(self, attr)}"
             logger.info(log_message)
 
-
-
 class AugmentationsConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.augmentations: Dict = {}
 
         self.setattrs(configurations=configurations)
 
-
 class DatasetConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        # self.augment: Boolean = False
-        # self.augmentations: List = []
-        # self.patch_training: Boolean = False
         self.data_path: str = None
         self.phase: str = None
         self.voxel_homog_size: int = 128
@@ -55,16 +46,25 @@ class DatasetConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
+class LayersConfigurations(Configurations, metaclass=ABCMeta):
+    def __init__(self, configurations: Dict) -> None:
+        self.block_names = []
+        self.block_parameters = []
+
+    def setattrs(self, configurations: Dict) -> None:
+        for name, parameters in configurations.items():
+            self.block_names.append(name)
+            self.block_parameters.append(parameters)
+
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.augment: Boolean = False
         self.augmentations: List = []
         self.patch_training: Boolean = False
-        
-        self.dataset: Configurations = DataConfigs(configurations = {}) 
-        
-        self.setattrs(configurations=configurations)
 
+        self.dataset: Configurations = DataConfigs(configurations = {})
+
+        self.setattrs(configurations=configurations)
 
 class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
@@ -79,7 +79,6 @@ class TrainConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
-
 class DataConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.data_paths: list = []
@@ -87,21 +86,6 @@ class DataConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
-
-# class EncoderConfigs(Configurations):
-#     def __init__(self, configurations: Dict) -> None:
-#         self.block = ENCONDER_BLOCKS[]
-
-# class ModelConfigs(Configurations):
-#     def __init__(self, configurations: Dict) -> None:
-#         self.depth: int = 3
-#         self.encoder: Configurations = EncoderConfigs(configurations={})
-#         self.skip_connection: Configurations = SkipConnectionConfigs(configurations={})
-#         self.decoder: Configurations = DecoderConfigs(configurations={})
-
-#         self.setattrs(configurations=configurations)
-
-
 class SchedulerConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.scheduler_fn: str = ""
@@ -109,28 +93,15 @@ class SchedulerConfigs(Configurations):
         self.scheduler_kwargs: Dict = {}
 
         self.setattrs(configurations=configurations)
-
-
-class SchedulerConfigs(Configurations):
-    def __init__(self, configurations: Dict) -> None:
-        self.scheduler_fn: str = ""
-        self.from_monai: bool = False
-        self.scheduler_kwargs: Dict = {}
-
-# class SkipConnectionConfigs(Configurations):
-#     def __init__(self, configurations: Dict) -> None:
-#         self.block = ENCONDER_BLOCKS[]
-
-# class DecoderConfigs(Configurations):
-#     def __init__(self, configurations: Dict) -> None:
-#         self.block = ENCONDER_BLOCKS[]
 
 class ModelConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.augmentations: Dict = {}
+        self.depth: int = 3
+        self.encoder: LayersConfigurations = LayersConfigurations(configurations={})
+        self.decoder: LayersConfigurations = LayersConfigurations(configurations={})
+        self.skip_connections: LayersConfigurations = LayersConfigurations(configurations={})
 
         self.setattrs(configurations=configurations)
-
 
 if __name__ == "__main__":
     # Parses the experiment configurations

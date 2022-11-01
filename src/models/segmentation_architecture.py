@@ -77,8 +77,9 @@ class SegmentationModel(nn.Module):
                         **conv_parameters, normalization=normalization, activation=activation, upsampling=upsampling
                     )
                 )
+            layers_by_level = nn.ModuleList(layers_by_level)
 
-            layers.extend(layers_by_level)
+            layers.extend([layers_by_level])
 
         return layers
 

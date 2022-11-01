@@ -3,7 +3,7 @@ train_configs:
   checkpoints_path: checkpoints_nnu_net_nvidia/
   logging_level: INFO
   epochs: 1000
-  batch_kernel_size: 2
+  batch_size: 2
   loss:
     name: Loss_BraTS # Dice, Dice_Focal, Loss_BraTS
     parameters:
@@ -21,7 +21,7 @@ train_configs:
       cycles: 0.5
   data_loader:
     dataset:
-      data_path: "database"
+      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
       num_concat: 4 # 2 or 4
       voxel_homog_kernel_size: 128
       transforms:

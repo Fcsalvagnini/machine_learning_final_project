@@ -110,8 +110,12 @@ def train(configs: Dict) -> None:
         num_concat=2
     )
 
-    train_dataloader = DataLoader(train_dataset, batch_size=2)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=2)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=train_configs.batch_size
+    )
+    validation_dataloader = DataLoader(
+        validation_dataset, batch_size=train_configs.batch_size
+    )
 
     logging.basicConfig(
         stream=sys.stdout,
@@ -128,7 +132,8 @@ def train(configs: Dict) -> None:
         f"Started Training Experiment with Model Architecture:"
     )
     summary(
-        model, input_size=(2, 128, 128, 128), batch_size=2, show_input=True,
+        model, input_size=(2, 128, 128, 128),
+        batch_size=train_configs.batch_size, show_input=True,
         show_hierarchical=True
     )
 

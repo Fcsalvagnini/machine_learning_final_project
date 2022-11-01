@@ -1,10 +1,17 @@
 train_configs:
-  model_tag: nnU-Net Nvidia
+  model_tag: nnU-Net_Nvidia
+  checkpoints_path: checkpoints_nnu_net_nvidia/
   logging_level: INFO
   epochs: 1000
-  batch_kernel_size: 16
-  loss: PSNR
-  optimizer: ADAM
+  batch_kernel_size: 2
+  loss:
+    name: Loss_BraTS # Dice, Dice_Focal, Loss_BraTS
+    parameters:
+      focal: true
+  optimizer:
+    name: ADAM
+    parameters:
+      lr: 0.0005
   scheduler:
     scheduler_fn: WarmupCosineSchedule
     from_monai: true

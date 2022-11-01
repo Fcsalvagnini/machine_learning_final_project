@@ -58,9 +58,9 @@ class LayersConfigurations(Configurations, metaclass=ABCMeta):
 
 class DataLoaderConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.augment: Boolean = False
+        self.augment: bool = False
         self.augmentations: List = []
-        self.patch_training: Boolean = False
+        self.patch_training: bool = False
 
         self.dataset: Configurations = DataConfigs(configurations = {})
 
@@ -69,10 +69,12 @@ class DataLoaderConfigs(Configurations):
 class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.model_tag: str = ""
+        self.checkpoints_path: str = ""
         self.epochs: int = 100
         self.batch_size: int = 8
-        self.loss: str = "RMSE"
-        self.optimizer: str = "SGD"
+        self.loss: dict = {}
+        self.optimizer: dict = {}
+        self.scheduler: Configurations = SchedulerConfigs(configurations={})
         self.logging_level: str = "INFO"
 
         self.data_loader: Configurations = DataLoaderConfigs(configurations={})

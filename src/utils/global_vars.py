@@ -2,6 +2,7 @@
 import logging
 import torch
 from src.models.building_blocks import Conv3DBlock
+from src.losses.brats_loss import Loss, LossBraTS
 
 LOGGING_LEVEL = {
     "DEBUG": logging.DEBUG,
@@ -22,4 +23,13 @@ NORMALIZATIONS = {
 ACTIVATIONS = {
     "LeakyReLU": torch.nn.LeakyReLU,
     "Sigmoid": torch.nn.Sigmoid
+}
+
+LOSSES = {
+    "Dice": Loss,
+    "Loss_BraTS": LossBraTS
+}
+
+OPTIMIZERS = {
+    "ADAM": torch.optim.Adam
 }

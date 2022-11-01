@@ -4,6 +4,28 @@ from torch import nn
 from src.utils.configurator import ModelConfigs
 from src.utils.global_vars import BUILDING_BLOCKS, NORMALIZATIONS, ACTIVATIONS
 
+"""
+Except for Parameter, the classes we discuss in this video are all subclasses
+of torch.nn.Module. This is the PyTorch base class meant to encapsulate behaviors
+specific to PyTorch Models and their components.
+
+One important behavior of torch.nn.Module is registering parameters. If a
+particular Module subclass has learning weights, these weights are expressed
+as instances of torch.nn.Parameter. The Parameter class is a subclass of
+torch.Tensor, with the special behavior that when they are assigned as
+attributes of a Module, they are added to the list of that modules parameters.
+These parameters may be accessed through the parameters() method on the
+Module class.
+
+For further details, please see:
+https://pytorch.org/tutorials/beginner/introyt/modelsyt_tutorial.html
+
+One other important feature to note: When we checked the weights of our
+layer with lin.weight, it reported itself as a Parameter (which is a
+subclass of Tensor), and let us know that it’s tracking gradients with
+autograd. This is a default behavior for Parameter that differs from Tensor.
+"""
+
 class SegmentationModel(nn.Module):
     def __init__(self, model_configs) -> None:
         super().__init__()
@@ -25,7 +47,7 @@ class SegmentationModel(nn.Module):
 
     def get_layers(self, configs):
         # Blocks in the same U-Net level will be saved as as list
-        layers = []
+        layers = nn.ModuleList([])
         for block_name, block_ops in zip(configs.block_names, configs.block_parameters):
             layers_by_level = []
             block_layer = BUILDING_BLOCKS["_".join(block_name.split("_")[:-1])]
@@ -56,7 +78,7 @@ class SegmentationModel(nn.Module):
                     )
                 )
 
-            layers.append(layers_by_level)
+            layers.extend(layers_by_level)
 
         return layers
 

@@ -22,7 +22,7 @@ def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
                 epoch):
     model.train()
     model.to("cuda")
-    runnin_loss = 0
+    running_loss = 0
 
     with trange(len(dataloader), desc="Train Loop") as progress_bar:
         for batch_idx, batch in zip(progress_bar, dataloader):
@@ -41,7 +41,7 @@ def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
                 desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f}"
             )
 
-    epoch_loss = (runnin_loss / len(dataloader)).detach().numpy()
+    epoch_loss = (running_loss / len(dataloader)).detach().numpy()
     monitoring_metrics["loss"]["train"].append(epoch_loss)
 
     return epoch_loss

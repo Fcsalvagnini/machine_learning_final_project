@@ -28,13 +28,13 @@ train_configs:
         augmentations:
           RandGaussianNoised:
             apply_on_label: false
-            prob: 1.0
+            prob: 0.3
             mean: 10.0
             std: 0.99
           RandAffined:
             apply_on_label: true
             mode: ["bilinear", "nearest"]
-            prob: 1.0
+            prob: 0.3
             # spatial_kernel_size: [240, 240, 155]
             translate_range: [40, 40, 2]
             rotate_range: [0.087, 0.087, 0.786]

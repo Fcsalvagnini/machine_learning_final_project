@@ -92,7 +92,7 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
         )
         valid_loss = run_validation_epcoch(
             model, optmizer, loss, validation_dataloader, monitoring_metrics,
-            epoch, train_configs, train_configs, save_best_model
+            epoch, train_configs, save_best_model
         )
         scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 

@@ -31,11 +31,11 @@ def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
             ]
             optimizer.zero_grad()
             predicted_segmentation = model(volumetric_image)
-            batch_loss = loss(predicted_segmentation, segmentation_mask)
+            batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
             batch_loss.backward()
             optimizer.step()
 
-            running_loss += loss.cpu()
+            running_loss += batch_loss.cpu()
 
             progress_bar.set_postfix(
                 desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f}"
@@ -62,7 +62,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
                     data.to("cuda") for data in batch
                 ]
                 predicted_segmentation = model(volumetric_image)
-                batch_loss = loss(predicted_segmentation, segmentation_mask)
+                batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
 
                 running_loss += batch_loss.cpu()
 

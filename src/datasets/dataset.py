@@ -4,14 +4,17 @@ import nibabel as nib
 import os
 
 from pathlib import Path
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from typing import Dict, List
 from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
+from monai import transforms
 from . import JsonHandler
 from .voxel_preprocessing import BrainPreProcess
 from src.augmentation.augmentations import AugmentationPipeline
+
 
 class BrainDataset(Dataset):
     def __init__(
@@ -78,10 +81,14 @@ class BrainDataset(Dataset):
             preprocess_fn=fn_random_spatial_crop,
             as_torch_tensor=True
         )
-
-        if self._transforms:
+        
+        #print(f"types:\nx: {type(x_brats)}y: {type(y_brats)}\n")
+        if self._transforms and self._phase == "train":    
             #raise NotImplementedError("Augmentation method not implemented yet.")
             x_brats, y_brats = self._transforms(x_brats, y_brats)
+
+
+        x_brats, y_brats = x_brats.type(torch.FloatTensor), y_brats.type(torch.FloatTensor)
 
         return x_brats, y_brats
 
@@ -105,14 +112,34 @@ if __name__ == "__main__":
     ds_cfg = DatasetConfigs(cfg["train_configs"]["data_loader"]["dataset"])
     print(ds_cfg.__dict__)
 
-    dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)
+    train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
+    valid_dataset = BrainDataset(ds_cfg, phase="validation", num_concat=2)
 
-    dataloader = DataLoader(
-        dataset,
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=4,
+        num_workers=2,
+        shuffle=False
+    )
+    valid_dataloader = DataLoader(
+        valid_dataset,
         batch_size=4,
         num_workers=2,
         shuffle=False
     )
 
-    interator = iter(dataloader)
-    x, y = next(interator)
+    train_interator = iter(train_dataloader)
+    valid_interator = iter(valid_dataloader)
+    
+    x_train, y_train = next(train_interator)
+    x_valid, y_valid = next(valid_interator)
+
+    print(f"x train type: {type(x_train)})")
+    print(f"y train type: {type(y_train)})")
+    print(f"x valid type: {type(x_valid)})")
+    print(f"y valid type: {type(y_train)})")
+
+    print(f"x train type: {x_train.dtype})")
+    print(f"y train type: {y_train.dtype})")
+    print(f"x valid type: {x_valid.dtype})")
+    print(f"y valid type: {y_train.dtype})")

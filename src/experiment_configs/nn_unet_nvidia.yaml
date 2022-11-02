@@ -21,7 +21,7 @@ train_configs:
       cycles: 0.5
   data_loader:
     dataset:
-      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+      data_path: "database"
       num_concat: 4 # 2 or 4
       voxel_homog_kernel_size: 128
       transforms:

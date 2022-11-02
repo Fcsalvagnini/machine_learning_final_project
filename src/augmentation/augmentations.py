@@ -10,7 +10,10 @@ def get_augmentations(aug_fn, keys, **kwargs):
     Returns:
         Data augmentation object
     """
-    return getattr(transforms, aug_fn)(keys=keys, **kwargs)
+    if aug_fn == "ToTensor":
+        return getattr(transforms, aug_fn)(**kwargs)
+    else:
+        return getattr(transforms, aug_fn)(keys=keys, **kwargs)
 
 
 class AugmentationPipeline:

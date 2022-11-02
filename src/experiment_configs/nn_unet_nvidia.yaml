@@ -1,3 +1,4 @@
+# Report about the removal of the background
 train_configs:
   model_tag: nnU-Net_Nvidia
   checkpoints_path: checkpoints_nnu_net_nvidia/
@@ -21,28 +22,26 @@ train_configs:
       cycles: 0.5
   data_loader:
     dataset:
-      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+      data_path: "database"
       num_concat: 4 # 2 or 4
       voxel_homog_kernel_size: 128
       transforms:
         augmentations:
           RandGaussianNoised:
             apply_on_label: false
-            prob: 0.3
-            mean: 10.0
-            std: 0.99
+            prob: 0.15
+            mean: 0
+            std: 0.15
           RandAffined:
             apply_on_label: true
             mode: ["bilinear", "nearest"]
-            prob: 0.3
-            # spatial_kernel_size: [240, 240, 155]
+            prob: 0.15
             translate_range: [40, 40, 2]
-            rotate_range: [0.087, 0.087, 0.786]
-            scale_range: [0.15, 0.15, 0.15]
+            scale_range: [0.4, 0.4, 0.4]
             padding_mode: "border"
           GaussianSmoothd:
             apply_on_label: false
-            sigma: 1
+            sigma: 0.5
 
       patch_training: true
 

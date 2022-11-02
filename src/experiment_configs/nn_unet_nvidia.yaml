@@ -43,6 +43,9 @@ train_configs:
           GaussianSmoothd:
             apply_on_label: false
             sigma: 1
+          ToTensor:
+            apply_on_label: true
+            track_meta: false
 
       patch_training: true
 

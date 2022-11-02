@@ -10,16 +10,17 @@ from torchvision import transforms
 from typing import Dict, List
 from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
-from monai import transforms
+from monai import transforms as mtransforms
 from . import JsonHandler
-from .voxel_preprocessing import BrainPreProcess
-from src.augmentation.augmentations import AugmentationPipeline
+from .voxel_preprocessing import BrainPreProcessing
 
+from src.augmentation.augmentations import AugmentationPipeline
+from src.utils.configurator import DatasetConfigs
 
 class BrainDataset(Dataset):
     def __init__(
         self,
-        cfg: Dict,
+        cfg: DatasetConfigs,
         phase: Literal["train", "validation", "test"],
         num_concat: Literal[2, 4] = 2,
         #data_path: Union[str, Path],
@@ -45,7 +46,8 @@ class BrainDataset(Dataset):
         self._brats_ids = self._get_phase_ids()
         self._brats_types_concat = self._get_brats_types_concat()
 
-        self.brain_preprocess = BrainPreProcess()
+        self._brain_preprocess = BrainPreProcessing()
+        
 
     def _get_phase_ids(self) -> List:
         return JsonHandler.parse_json_to_dict(
@@ -59,6 +61,8 @@ class BrainDataset(Dataset):
         else:
             raise ValueError(f"num_concat variable must be 2 or 4. Value passed is: {self._num_concat}")
 
+
+
     def __getitem__(self, idx) -> Sequence:
         brats_id = self._brats_ids[idx]
 
@@ -68,27 +72,29 @@ class BrainDataset(Dataset):
         y_brats_file = list(map(lambda gt_brats_type:
             os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
 
-        fn_random_spatial_crop = self.brain_preprocess.random_spatial_crop(self._voxel_homog_size)
+        fn_random_spatial_crop = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
 
-        x_brats = self.brain_preprocess.prepare_nib_data(
+        x_brats = self._brain_preprocess.prepare_nib_data(
             images_path=x_brats_files,
             preprocess_fn=fn_random_spatial_crop,
-            as_torch_tensor=True
+            as_torch_tensor=True,
+            in_img=True,
+            dtype="float32"
         )
 
-        y_brats = self.brain_preprocess.prepare_nib_data(
+        y_brats = self._brain_preprocess.prepare_nib_data(
             images_path=y_brats_file,
             preprocess_fn=fn_random_spatial_crop,
-            as_torch_tensor=True
+            as_torch_tensor=True,
+            dtype="uint8"
         )
         
-        #print(f"types:\nx: {type(x_brats)}y: {type(y_brats)}\n")
         if self._transforms and self._phase == "train":    
-            #raise NotImplementedError("Augmentation method not implemented yet.")
             x_brats, y_brats = self._transforms(x_brats, y_brats)
+        else:
+            x_brats, y_brats = self._brain_preprocess.to_tensor_transform(x_brats, y_brats) 
 
-
-        x_brats, y_brats = x_brats.type(torch.FloatTensor), y_brats.type(torch.FloatTensor)
+        x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
 
         return x_brats, y_brats
 
@@ -115,31 +121,34 @@ if __name__ == "__main__":
     train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
     valid_dataset = BrainDataset(ds_cfg, phase="validation", num_concat=2)
 
+    batch_size = 4
     train_dataloader = DataLoader(
         train_dataset,
-        batch_size=4,
+        batch_size=batch_size,
         num_workers=2,
         shuffle=False
     )
     valid_dataloader = DataLoader(
         valid_dataset,
-        batch_size=4,
+        batch_size=batch_size,
         num_workers=2,
         shuffle=False
     )
-
     train_interator = iter(train_dataloader)
     valid_interator = iter(valid_dataloader)
-    
-    x_train, y_train = next(train_interator)
-    x_valid, y_valid = next(valid_interator)
 
-    print(f"x train type: {type(x_train)})")
-    print(f"y train type: {type(y_train)})")
-    print(f"x valid type: {type(x_valid)})")
-    print(f"y valid type: {type(y_train)})")
+    for i in range(batch_size):
+        
+        x_train, y_train = next(train_interator)
+        x_valid, y_valid = next(valid_interator)
 
-    print(f"x train type: {x_train.dtype})")
-    print(f"y train type: {y_train.dtype})")
-    print(f"x valid type: {x_valid.dtype})")
-    print(f"y valid type: {y_train.dtype})")
+        print(f"y_max train: {torch.amax(y_train)}")
+        print(f"y_max valid: {torch.amax(y_valid)}")
+        print(f"x train type: {type(x_train)})")
+        print(f"y train type: {type(y_train)})")
+        print(f"x valid type: {type(x_valid)})")
+        print(f"y valid type: {type(y_train)})")
+        print(f"x train type: {x_train.dtype})")
+        print(f"y train type: {y_train.dtype})")
+        print(f"x valid type: {x_valid.dtype})")
+        print(f"y valid type: {y_train.dtype})")

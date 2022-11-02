@@ -34,3 +34,13 @@ class Conv3DBlock(nn.Module):
             x = self.upsampling(x)
 
         return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(
+                    m.weight, mode='fan_out', nonlinearity='leaky_relu'
+                )
+
+                if m.bias is not None:
+                    m.bias.data.zero_()

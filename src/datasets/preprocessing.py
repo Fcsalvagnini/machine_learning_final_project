@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import monai as mn
 import nibabel as nib 
 import numpy as np
-from send2trash import TrashPermissionError
+
 import torch
 import random
 
@@ -40,7 +40,6 @@ class BrainPreProcessing:
         })(x, y)
 
 
-
     @staticmethod
     def random_spatial_crop(self, voxel_homo_size: int = 128) -> Callable:
         return mn.transforms.RandSpatialCrop(
@@ -49,13 +48,11 @@ class BrainPreProcessing:
             random_size=False
         )
 
-    def _concatenate_voxel(self, *voxels: List[np.ndarray], axis: int=0) -> torch.Tensor:
+    def _concatenate_voxel(self, *voxels: List[torch.Tensor], axis: int=0) -> torch.Tensor:
         return torch.cat(*voxels, axis=axis)
 
 
-
-
-    def prepare_nib_data(
+    def load_data(
         self,
         images_path: List[str],
         preprocess_fn: Callable,
@@ -63,21 +60,45 @@ class BrainPreProcessing:
         dtype: Literal["uint8", "int16"] = "uint8",
         in_img: bool = False
         ) -> torch.Tensor:
-        
-        voxels = list(
-            map(lambda image_path: self._nib_load_images(image_path=image_path), images_path))
 
-        if (preprocess_fn):
-            voxels = list(map(lambda voxel: np.expand_dims(voxel, axis=0), voxels))
-            if in_img:
-                voxels = list(map(lambda voxel: BrainPreProcessing.normalize(voxel), voxels))        
-            voxels = list(map(lambda voxel: preprocess_fn(voxel), voxels))
-    
-        tensor_dtype = getattr(torch, dtype)
-        if as_torch_tensor:
-            voxels = list(map(lambda voxel: voxel.as_tensor().type(tensor_dtype), voxels))
+        voxels = list(map(
+            lambda image_path: self._prepare_nib_data(
+                    image_path=image_path,
+                    preprocess_fn=preprocess_fn,
+                    as_torch_tensor=as_torch_tensor,
+                    dtype=dtype,
+                    in_img=in_img
+                    ), 
+                images_path
+                )
+            )
+        
         if len(images_path) > 1:
             conc_voxel = self._concatenate_voxel(voxels)    
             return conc_voxel
         else:
             return voxels[0]
+        
+
+    def _prepare_nib_data(
+        self,
+        image_path: str,
+        preprocess_fn: Callable,
+        as_torch_tensor: bool = True,
+        dtype: Literal["uint8", "int16"] = "uint8",
+        in_img: bool = False
+        ) -> torch.Tensor:
+        
+        voxel = self._nib_load_images(image_path=image_path)
+
+        if (preprocess_fn):
+            voxel = np.expand_dims(voxel, axis=0)
+            if in_img:
+                voxel = BrainPreProcessing.normalize(voxel)        
+            voxel = preprocess_fn(voxel)
+    
+        tensor_dtype = getattr(torch, dtype)
+        if as_torch_tensor:
+            voxel = voxel.as_tensor().type(tensor_dtype)
+            
+        return voxel

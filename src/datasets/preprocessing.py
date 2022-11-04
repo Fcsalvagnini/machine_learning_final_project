@@ -6,7 +6,7 @@ import numpy as np
 
 import torch
 import random
-
+import volumentations as vo
 from typing import Dict, List
 from typing import Optional, Callable, Tuple, Literal
 
@@ -55,7 +55,7 @@ class BrainPreProcessing:
     def _prepare_nib_data(
         self,
         image_path: str,
-        preprocess_fn: Callable,
+        #preprocess_fn: Callable,
         as_torch_tensor: bool = True,
         dtype: Literal["uint8", "int16"] = "uint8",
         in_img: bool = False
@@ -70,10 +70,7 @@ class BrainPreProcessing:
         
         else:
             voxel = torch.from_numpy(voxel.astype(np.int16)).type(tensor_dtype)
-        
-        if (preprocess_fn):
-            voxel = preprocess_fn(voxel)    
-            voxel = voxel.as_tensor().type(tensor_dtype)
+    
             
         return voxel
 
@@ -81,7 +78,7 @@ class BrainPreProcessing:
     def load_data(
         self,
         images_path: List[str],
-        preprocess_fn: Callable,
+        #preprocess_fn: Callable,
         as_torch_tensor: bool = True,
         dtype: Literal["uint8", "int16"] = "uint8",
         in_img: bool = False
@@ -90,7 +87,7 @@ class BrainPreProcessing:
         voxels = list(map(
             lambda image_path: self._prepare_nib_data(
                     image_path=image_path,
-                    preprocess_fn=preprocess_fn,
+                    #preprocess_fn=preprocess_fn,
                     as_torch_tensor=as_torch_tensor,
                     dtype=dtype,
                     in_img=in_img

@@ -30,7 +30,6 @@ class BrainDataset(Dataset):
         #transforms: Optional[Callable] = None,
         #voxel_homog_size: int = 128
         ) -> None:
-        print(cfg)
         self._phase = phase
         self._num_concat = num_concat
         self._data_path = cfg.data_path
@@ -40,7 +39,6 @@ class BrainDataset(Dataset):
         self.brats_types = ["flair", "t1", "t1ce", "t2"]
         self.gt_brats_types = ["seg"]
 
-        print(self._transforms.augmentations)
         if self._phase == "train":
             self._transforms = AugmentationPipeline(cfg.transforms.augmentations)
         else:
@@ -67,6 +65,7 @@ class BrainDataset(Dataset):
 
 
     def __getitem__(self, idx) -> Sequence:
+
         brats_id = self._brats_ids[idx]
 
         x_brats_files = list(map(lambda brats_type: os.path.join(
@@ -79,22 +78,27 @@ class BrainDataset(Dataset):
             preprocess_fn = None
         else:
             preprocess_fn = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
-
+            
         x_brats = self._brain_preprocess.load_data(
             images_path=x_brats_files,
-            preprocess_fn=preprocess_fn,
+            #preprocess_fn=preprocess_fn,
             as_torch_tensor=True,
             in_img=True,
             dtype="float32"
         )
-
+        
         y_brats = self._brain_preprocess.load_data(
             images_path=y_brats_file,
-            preprocess_fn=preprocess_fn,
+            #preprocess_fn=preprocess_fn,
             as_torch_tensor=True,
             dtype="uint8"
         )
         
+        if (preprocess_fn):
+            brats_conc = torch.cat([x_brats, y_brats], axis=0)        
+            brats_conc = preprocess_fn(brats_conc)
+            x_brats, y_brats = brats_conc[:2], brats_conc[2:]
+
         if self._transforms and self._phase == "train":    
             x_brats, y_brats = self._transforms(x_brats, y_brats)
         else:
@@ -102,17 +106,16 @@ class BrainDataset(Dataset):
 
         x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
 
-        x_brats_np, y_brats_np = x_brats.numpy(), y_brats.numpy()
-        print(x_brats_files)
-        print(y_brats_file)
-        xx = list(map(lambda x, name: save(x, name), x_brats, x_brats_files))
-        yy = list(map(lambda x, name: save(x, name), y_brats, y_brats_file))
- 
-        xx0 = np.load(xx[0])
-        yy0 = np.load(yy[0])
+        # x_brats_np, y_brats_np = x_brats.numpy(), y_brats.numpy()
+        # xx = list(map(lambda x, name: save(x, name), x_brats, x_brats_files))
+        # yy = list(map(lambda x, name: save(x, name), y_brats, y_brats_file))
+        # xx0 = np.load(xx[0])
+        # xx1 = np.load(xx[1])
+        # yy0 = np.load(yy[0])
             
-        multi_slice_viewer(xx0, xx[0])
-        multi_slice_viewer(yy0, yy[0])
+        # multi_slice_viewer(xx0, xx[0])
+        # multi_slice_viewer(xx1, xx[1])
+        # multi_slice_viewer(yy0, yy[0])
         
         return x_brats, y_brats
 
@@ -149,22 +152,21 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size,
+        num_workers=1,
+        shuffle=False
+    )
+    valid_dataloader = DataLoader(
+        valid_dataset,
+        batch_size=batch_size,
         num_workers=2,
         shuffle=False
     )
-    # valid_dataloader = DataLoader(
-    #     valid_dataset,
-    #     batch_size=batch_size,
-    #     num_workers=2,
-    #     shuffle=False
-    # )
     train_interator = iter(train_dataloader)
     #valid_interator = iter(valid_dataloader)
-
     for i in range(batch_size):
         
-        x_train, y_train = next(train_interator)
         #x_valid, y_valid = next(valid_interator)
+        x_train, y_train = next(train_interator)
 
         print(f"x_max train: {torch.amax(x_train)}")
         #print(f"x_max test: {torch.amax(x_valid)}")
@@ -178,6 +180,5 @@ if __name__ == "__main__":
         print(f"y train type: {y_train.dtype})")
         #print(f"x test type: {x_valid.dtype})")
         print(f"y test type: {y_train.dtype})")
-        #print(f"x shape: {x_valid.shape})")
-        #print(f"y shape: {y_valid.shape})")
-        
+        print(f"x shape: {x_train.shape})")
+        print(f"y shape: {y_train.shape})")

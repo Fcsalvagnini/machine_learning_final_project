@@ -13,11 +13,12 @@ from typing import Optional, Callable, Tuple, Literal
 from src.augmentation.augmentations import AugmentationPipeline
 class BrainPreProcessing:
 
-    def _nib_load_images(self, image_path: str) -> np.ndarray:
+    def _nib_load_images(self, image_path: str, in_img: bool = True) -> np.ndarray:
         voxel_nii = nib.load(image_path)
         voxel_data = voxel_nii.get_data() #.dataobj
         voxel_np = np.asarray(voxel_data)
-        voxel_np[voxel_np == 4] = 3
+        if not in_img:
+            voxel_np[voxel_np == 4] = 3
 
         return voxel_np
     
@@ -65,7 +66,7 @@ class BrainPreProcessing:
         ) -> torch.Tensor:
         
         voxels = list(
-            map(lambda image_path: self._nib_load_images(image_path=image_path), images_path))
+            map(lambda image_path: self._nib_load_images(image_path=image_path, in_img=in_img), images_path))
 
         if (preprocess_fn):
             voxels = list(map(lambda voxel: np.expand_dims(voxel, axis=0), voxels))

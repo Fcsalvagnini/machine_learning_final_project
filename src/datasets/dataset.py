@@ -75,8 +75,6 @@ class BrainDataset(Dataset):
 
         if self._phase == "test" or self._phase == "validation_test":
             preprocess_fn = None
-            if self._phase == "validation_test":
-                self._phase = "validation"
         else:
             preprocess_fn = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
 
@@ -102,7 +100,12 @@ class BrainDataset(Dataset):
 
         x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
 
-        return x_brats, y_brats
+        if self._phase == "test" or self._phase == "validation_test":
+            to_return = (x_brats, y_brats), brats_id
+        else:
+            to_return = (x_brats, y_brats)
+
+        return to_return
 
     def __len__(self) -> int:
         return len(self._brats_ids)

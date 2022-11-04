@@ -22,7 +22,7 @@ train_configs:
       cycles: 0.5
   data_loader:
     dataset:
-      data_path: "../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
       num_concat: 4 # 2 or 4
       voxel_homog_kernel_size: 128
       transforms:
@@ -47,10 +47,10 @@ train_configs:
 
 validation_configs:
   model_tag: nnU-Net_Nvidia
-  checkpoint_path: "path_to_checkpoint_to_be_used_for_inference"
+  checkpoint_path: "checkpoints_nnu_net_nvidia/nnU-Net_Nvidia_epoch_126_loss_3.416630268096924.pth"
   data_loader:
     dataset:
-      data_path: "../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
 
 
 model:

@@ -2,13 +2,17 @@ from typing import Dict
 import torch
 import logging
 import argparse
+import numpy as np
 import sys
+import csv
 import yaml
 from torchsummary import summary
 from tqdm import trange
 import os
 import gc
 from monai.inferers import sliding_window_inference
+from monai.losses import DiceLoss
+from monai.metrics import DiceMetric
 
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
 from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs
@@ -74,7 +78,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
     monitoring_metrics["loss"]["validation"].append(epoch_loss)
 
-    save_best_model(epoch_loss, epoch, model, optimizer, loss, configurations)
+    save_best_model(epoch_loss, epoch, model, configurations)
 
     return epoch_loss
 
@@ -98,6 +102,7 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
         scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
 def train(configs: Dict) -> None:
+    torch.cuda.set_device(1)
     train_configs = TrainConfigs(configs["train_configs"])
     train_dataset_configs = DatasetConfigs(configs["train_configs"]["data_loader"]["dataset"])
     train_dataset = BrainDataset(
@@ -155,7 +160,51 @@ def train(configs: Dict) -> None:
 
 def validate(configs: Dict):
     validation_configs = ValidationConfigs(configs["validation_configs"])
+    validation_dataset_configs = DatasetConfigs(configs["validation_configs"]["data_loader"]["dataset"])
+    validation_test_dataset = BrainDataset(
+        cfg=validation_dataset_configs,
+        phase="validation_test",
+        num_concat=2
+    )
+    validation_test_dataloader = DataLoader(
+        validation_test_dataset, batch_size=1
+    )
 
+    from monai.losses import DiceLoss
+    dice_loss = DiceLoss(sigmoid=True, batch=True)
+
+    model = get_model(configs)
+    model.load_state_dict(torch.load(validation_configs.checkpoint_path))
+    dice_calculator = DiceMetric(include_background=False, reduction="mean")
+
+    with torch.no_grad():
+        torch.cuda.empty_cache()
+        gc.collect()
+
+        model.to("cuda")
+        model.eval()
+        to_csv = [["image_path", "dice_score", "dice_max", "voxel_max_prob"]]
+
+        for image in validation_test_dataloader:
+            (x, y), path = image
+            prediction = sliding_window_inference(x.to("cuda"), [128, 128, 128], 1, model)
+            prediction_final = torch.zeros(240, 240, 155)
+            idx = prediction[0, 0] > 0.3
+            prediction_final[idx] = 1
+            idx = prediction[0, 1] > 0.3
+            prediction_final[idx] = 2
+            idx = prediction[0, 2] > 0.3
+            prediction_final[idx] = 3
+            dice_max = dice_calculator(y, y)
+            dice_pred = dice_calculator(prediction_final[None, None, ...], y)
+            voxel_max_prob = np.max(prediction.cpu().detach().numpy())
+            path = path[0]
+
+            to_csv.append([path, dice_pred.cpu().detach().numpy()[0][0], dice_max.cpu().detach().numpy()[0][0], voxel_max_prob])
+
+    with open("first_results.csv", "w") as csvfile: 
+        csvwriter = csv.writer(csvfile) 
+        csvwriter.writerows(to_csv)
 
 
 if __name__ == "__main__":

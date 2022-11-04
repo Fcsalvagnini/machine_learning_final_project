@@ -51,8 +51,11 @@ class BrainDataset(Dataset):
         
 
     def _get_phase_ids(self) -> List:
+        _phase = self._phase
+        if _phase == "validation_test":
+            _phase = "validation"
         return JsonHandler.parse_json_to_dict(
-            phase=self._phase)["ids"]
+            phase=_phase)["ids"]
 
     def _get_brats_types_concat(self):
         if self._num_concat == 2:
@@ -74,7 +77,7 @@ class BrainDataset(Dataset):
         y_brats_file = list(map(lambda gt_brats_type:
             os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
 
-        if self._phase == "test":
+        if self._phase == "test" or self._phase == "validation_test":
             preprocess_fn = None
         else:
             preprocess_fn = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
@@ -119,6 +122,7 @@ class BrainDataset(Dataset):
         
         return x_brats, y_brats
 
+        return to_return
 
     def __len__(self) -> int:
         return len(self._brats_ids)
@@ -143,7 +147,6 @@ if __name__ == "__main__":
     cfg = YamlHandler.parse_yaml_to_dict("nn_unet_nvidia.yaml")
     #print(cfg)
     ds_cfg = DatasetConfigs(cfg["train_configs"]["data_loader"]["dataset"])
-    print(ds_cfg.__dict__)
 
     train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
     valid_dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)

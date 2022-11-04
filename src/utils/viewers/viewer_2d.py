@@ -9,7 +9,7 @@ def remove_keymap_conflicts(new_keys_set):
             for key in remove_list:
                 keys.remove(key)
 
-def multi_slice_viewer(voxel):
+def multi_slice_viewer(voxel, voxel_type: str):
     remove_keymap_conflicts({'j', 'k'})
     if len(voxel.shape) == 4:
         voxel = voxel.squeeze()
@@ -17,6 +17,7 @@ def multi_slice_viewer(voxel):
     ax.voxel = voxel
     ax.index = voxel.shape[0] // 2
     ax.imshow(voxel[ax.index])
+    ax.set_title(voxel_type)
     fig.canvas.mpl_connect('key_press_event', process_key)
     plt.show()
 

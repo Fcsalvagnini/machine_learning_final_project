@@ -3,6 +3,8 @@ from multiprocessing.sharedctypes import Value
 import nibabel as nib 
 import os
 
+import numpy as np
+
 from pathlib import Path
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -16,6 +18,7 @@ from .preprocessing import BrainPreProcessing
 
 from src.augmentation.augmentations import AugmentationPipeline
 from src.utils.configurator import DatasetConfigs
+from src.utils.viewers.viewer_2d import multi_slice_viewer
 
 class BrainDataset(Dataset):
     def __init__(
@@ -99,18 +102,36 @@ class BrainDataset(Dataset):
 
         x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
 
+        x_brats_np, y_brats_np = x_brats.numpy(), y_brats.numpy()
+        print(x_brats_files)
+        print(y_brats_file)
+        xx = list(map(lambda x, name: save(x, name), x_brats, x_brats_files))
+        yy = list(map(lambda x, name: save(x, name), y_brats, y_brats_file))
+ 
+        xx0 = np.load(xx[0])
+        yy0 = np.load(yy[0])
+            
+        multi_slice_viewer(xx0, xx[0])
+        multi_slice_viewer(yy0, yy[0])
+        
         return x_brats, y_brats
 
 
     def __len__(self) -> int:
         return len(self._brats_ids)
 
+def save(image, name):
+    if not (type) is np.ndarray:
+        image = image.numpy()
+    img_name = "result_images/" + os.path.join(name.replace(".nii.gz", ".npy").split("/")[-1])
+    np.save(img_name, image, allow_pickle=False)
+    return img_name
 
 if __name__ == "__main__":
     dataset_kwargs = {
         "phase": "test",
         "data_path": "database",
-        "num_concat": 4,
+        "num_concat": 2,
         "transforms": None,
         "voxel_homog_size":  128
     }
@@ -124,39 +145,39 @@ if __name__ == "__main__":
     train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
     valid_dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)
 
-    batch_size = 4
+    batch_size = 1
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         num_workers=2,
         shuffle=False
     )
-    valid_dataloader = DataLoader(
-        valid_dataset,
-        batch_size=batch_size,
-        num_workers=2,
-        shuffle=False
-    )
+    # valid_dataloader = DataLoader(
+    #     valid_dataset,
+    #     batch_size=batch_size,
+    #     num_workers=2,
+    #     shuffle=False
+    # )
     train_interator = iter(train_dataloader)
-    valid_interator = iter(valid_dataloader)
+    #valid_interator = iter(valid_dataloader)
 
     for i in range(batch_size):
         
         x_train, y_train = next(train_interator)
-        x_valid, y_valid = next(valid_interator)
+        #x_valid, y_valid = next(valid_interator)
 
         print(f"x_max train: {torch.amax(x_train)}")
-        print(f"x_max test: {torch.amax(x_valid)}")
+        #print(f"x_max test: {torch.amax(x_valid)}")
         print(f"y_max train: {torch.amax(y_train)}")
-        print(f"y_max test: {torch.amax(y_valid)}")
+        #print(f"y_max test: {torch.amax(y_valid)}")
         print(f"x train type: {type(x_train)})")
         print(f"y train type: {type(y_train)})")
-        print(f"x test type: {type(x_valid)})")
+        #print(f"x test type: {type(x_valid)})")
         print(f"y test type: {type(y_train)})")
         print(f"x train type: {x_train.dtype})")
         print(f"y train type: {y_train.dtype})")
-        print(f"x test type: {x_valid.dtype})")
+        #print(f"x test type: {x_valid.dtype})")
         print(f"y test type: {y_train.dtype})")
-        print(f"x shape: {x_valid.shape})")
-        print(f"y shape: {y_valid.shape})")
+        #print(f"x shape: {x_valid.shape})")
+        #print(f"y shape: {y_valid.shape})")
         

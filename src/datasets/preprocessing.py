@@ -6,7 +6,7 @@ import numpy as np
 
 import torch
 import random
-
+import volumentations as vo
 from typing import Dict, List
 from typing import Optional, Callable, Tuple, Literal
 
@@ -55,7 +55,7 @@ class BrainPreProcessing:
     def _prepare_nib_data(
         self,
         image_path: str,
-        preprocess_fn: Callable,
+        #preprocess_fn: Callable,
         as_torch_tensor: bool = True,
         dtype: Literal["uint8", "int16"] = "uint8",
         in_img: bool = False
@@ -63,21 +63,14 @@ class BrainPreProcessing:
         
         voxel = self._nib_load_images(image_path=image_path, in_img=in_img)
         tensor_dtype = getattr(torch, dtype)
+        voxel = np.expand_dims(voxel, axis=0)
 
-        if (preprocess_fn):
-            voxel = np.expand_dims(voxel, axis=0)
-            if in_img:
-                voxel = self._normalize(voxel)        
-            voxel = preprocess_fn(voxel)
+        if in_img:
+            voxel = self._normalize(voxel)        
+        
         else:
-            voxel = np.expand_dims(voxel, axis=0).astype(np.int16)
-            voxel = torch.from_numpy(voxel).type(tensor_dtype)
-            if in_img:
-                voxel = self._normalize(voxel)        
-            return voxel
-
-        if as_torch_tensor:
-            voxel = voxel.as_tensor().type(tensor_dtype)
+            voxel = torch.from_numpy(voxel.astype(np.int16)).type(tensor_dtype)
+    
             
         return voxel
 
@@ -85,7 +78,7 @@ class BrainPreProcessing:
     def load_data(
         self,
         images_path: List[str],
-        preprocess_fn: Callable,
+        #preprocess_fn: Callable,
         as_torch_tensor: bool = True,
         dtype: Literal["uint8", "int16"] = "uint8",
         in_img: bool = False
@@ -94,7 +87,7 @@ class BrainPreProcessing:
         voxels = list(map(
             lambda image_path: self._prepare_nib_data(
                     image_path=image_path,
-                    preprocess_fn=preprocess_fn,
+                    #preprocess_fn=preprocess_fn,
                     as_torch_tensor=as_torch_tensor,
                     dtype=dtype,
                     in_img=in_img

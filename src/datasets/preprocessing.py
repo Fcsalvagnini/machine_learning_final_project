@@ -27,8 +27,8 @@ class BrainPreProcessing:
         return mn.transforms.CropForeground()(image)
 
 
-    @staticmethod
-    def normalize(image):
+    
+    def _normalize(self, image):
         return mn.transforms.NormalizeIntensity()(image)
 
 
@@ -90,12 +90,12 @@ class BrainPreProcessing:
         in_img: bool = False
         ) -> torch.Tensor:
         
-        voxel = self._nib_load_images(image_path=image_path)
+        voxel = self._nib_load_images(image_path=image_path, in_img=in_img)
 
         if (preprocess_fn):
             voxel = np.expand_dims(voxel, axis=0)
             if in_img:
-                voxel = BrainPreProcessing.normalize(voxel)        
+                voxel = self._normalize(voxel)        
             voxel = preprocess_fn(voxel)
     
         tensor_dtype = getattr(torch, dtype)

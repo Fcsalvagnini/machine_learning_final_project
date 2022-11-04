@@ -94,7 +94,7 @@ class BrainDataset(Dataset):
         else:
             x_brats, y_brats = self._brain_preprocess.to_tensor_transform(x_brats, y_brats) 
 
-        x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
+        x_brats, y_brats = x_brats.type(torch.float16), y_brats.type(torch.int8)
 
         return x_brats, y_brats
 

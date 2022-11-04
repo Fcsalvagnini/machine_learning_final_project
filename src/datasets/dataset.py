@@ -12,7 +12,7 @@ from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
 from monai import transforms as mtransforms
 from . import JsonHandler
-from .voxel_preprocessing import BrainPreProcessing
+from .preprocessing import BrainPreProcessing
 
 from src.augmentation.augmentations import AugmentationPipeline
 from src.utils.configurator import DatasetConfigs
@@ -74,7 +74,7 @@ class BrainDataset(Dataset):
 
         fn_random_spatial_crop = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
 
-        x_brats = self._brain_preprocess.prepare_nib_data(
+        x_brats = self._brain_preprocess.load_data(
             images_path=x_brats_files,
             preprocess_fn=fn_random_spatial_crop,
             as_torch_tensor=True,
@@ -82,7 +82,7 @@ class BrainDataset(Dataset):
             dtype="float32"
         )
 
-        y_brats = self._brain_preprocess.prepare_nib_data(
+        y_brats = self._brain_preprocess.load_data(
             images_path=y_brats_file,
             preprocess_fn=fn_random_spatial_crop,
             as_torch_tensor=True,
@@ -94,7 +94,7 @@ class BrainDataset(Dataset):
         else:
             x_brats, y_brats = self._brain_preprocess.to_tensor_transform(x_brats, y_brats) 
 
-        x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
+        x_brats, y_brats = x_brats.type(torch.float16), y_brats.type(torch.int8)
 
         return x_brats, y_brats
 

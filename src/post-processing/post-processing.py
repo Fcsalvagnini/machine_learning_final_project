@@ -9,8 +9,8 @@ def post_process(prediction):
     
     result = torch.zeros_like(wt, dtype=torch.uint8)
     result[(wt >= 0.45 and tc < 0.4)] = 2
-    result[et < 0.45] = 1
-    result[et >= 0.45] = 4
+    result[(wt >= 0.45 and et < 0.45)] = 1
+    result[(wt >= 0.45 and et >= 0.45)] = 4
     
     et = result == 4
     et_prob = prediction[2]

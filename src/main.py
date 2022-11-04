@@ -9,6 +9,7 @@ from tqdm import trange
 import os
 import gc
 from monai.inferers import sliding_window_inference
+from monai.metrics import DiceMetric
 
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
 from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs
@@ -74,7 +75,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
     monitoring_metrics["loss"]["validation"].append(epoch_loss)
 
-    save_best_model(epoch_loss, epoch, model, optimizer, loss, configurations)
+    save_best_model(epoch_loss, epoch, model, configurations)
 
     return epoch_loss
 
@@ -153,8 +154,32 @@ def train(configs: Dict) -> None:
         scheduler, train_configs
     )
 
+
 def validate(configs: Dict):
     validation_configs = ValidationConfigs(configs["validation_configs"])
+    validation_dataset_configs = DatasetConfigs(configs["validation_configs"]["data_loader"]["dataset"])
+    validation_test_dataset = BrainDataset(
+        cfg=validation_dataset_configs,
+        phase="validation_test",
+        num_concat=2
+    )
+    validation_test_dataloader = DataLoader(
+        validation_test_dataset, batch_size=1
+    )
+
+    from monai.losses import DiceLoss
+    dice_loss = DiceLoss(sigmoid=True, batch=True)
+
+    model = get_model(configs)
+    dice_metrics = []
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    for image in validation_test_dataloader:
+        x, y = image
+        # prediction = sliding_window_inference(x, [1, 1, 128, 128, 128], 1, model)
+        dice = dice_metric(y, y)
+        print(dice)
+        break
+        # dice_metrics.append(dice)
 
 
 

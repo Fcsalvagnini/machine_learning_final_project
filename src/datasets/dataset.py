@@ -27,7 +27,6 @@ class BrainDataset(Dataset):
         #transforms: Optional[Callable] = None,
         #voxel_homog_size: int = 128
         ) -> None:
-        print(cfg)
         self._phase = phase
         self._num_concat = num_concat
         self._data_path = cfg.data_path
@@ -37,7 +36,6 @@ class BrainDataset(Dataset):
         self.brats_types = ["flair", "t1", "t1ce", "t2"]
         self.gt_brats_types = ["seg"]
 
-        print(self._transforms.augmentations)
         if self._phase == "train":
             self._transforms = AugmentationPipeline(cfg.transforms.augmentations)
         else:
@@ -50,8 +48,11 @@ class BrainDataset(Dataset):
         
 
     def _get_phase_ids(self) -> List:
+        _phase = self._phase
+        if _phase == "validation_test":
+            _phase = "validation"
         return JsonHandler.parse_json_to_dict(
-            phase=self._phase)["ids"]
+            phase=_phase)["ids"]
 
     def _get_brats_types_concat(self):
         if self._num_concat == 2:
@@ -72,8 +73,10 @@ class BrainDataset(Dataset):
         y_brats_file = list(map(lambda gt_brats_type:
             os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
 
-        if self._phase == "test":
+        if self._phase == "test" or self._phase == "validation_test":
             preprocess_fn = None
+            if self._phase == "validation_test":
+                self._phase = "validation"
         else:
             preprocess_fn = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
 
@@ -101,10 +104,8 @@ class BrainDataset(Dataset):
 
         return x_brats, y_brats
 
-
     def __len__(self) -> int:
         return len(self._brats_ids)
-
 
 if __name__ == "__main__":
     dataset_kwargs = {
@@ -119,7 +120,6 @@ if __name__ == "__main__":
     cfg = YamlHandler.parse_yaml_to_dict("nn_unet_nvidia.yaml")
     #print(cfg)
     ds_cfg = DatasetConfigs(cfg["train_configs"]["data_loader"]["dataset"])
-    print(ds_cfg.__dict__)
 
     train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
     valid_dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)

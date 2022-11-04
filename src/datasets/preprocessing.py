@@ -68,13 +68,13 @@ class BrainPreProcessing:
             voxel = np.expand_dims(voxel, axis=0)
             if in_img:
                 voxel = self._normalize(voxel)        
-                voxel = preprocess_fn(voxel)
+            voxel = preprocess_fn(voxel)
         else:
             voxel = np.expand_dims(voxel, axis=0).astype(np.int16)
-            #voxel = torch.from_numpy(voxel).type(tensor_dtype)
+            voxel = torch.from_numpy(voxel).type(tensor_dtype)
             if in_img:
                 voxel = self._normalize(voxel)        
-            #return voxel
+            return voxel
 
         if as_torch_tensor:
             voxel = voxel.as_tensor().type(tensor_dtype)

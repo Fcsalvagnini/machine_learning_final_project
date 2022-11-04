@@ -81,6 +81,14 @@ class TrainConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
+class ValidationConfigs(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.model_tag: str = ""
+        self.checkpoint_path: str = ""
+        self.data_path: str = ""
+
+        self.setattrs(configurations=configurations)
+
 class DataConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.data_paths: list = []

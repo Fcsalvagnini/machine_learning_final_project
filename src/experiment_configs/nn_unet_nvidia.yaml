@@ -45,6 +45,11 @@ train_configs:
 
       patch_training: true
 
+validation_configs:
+  model_tag: nnU-Net_Nvidia
+  checkpoint_path: "path_to_checkpoint_to_be_used_for_inference"
+  data_path: "path_to_dataset"
+
 model:
   name: nvidia_nnunet
   depth: 7

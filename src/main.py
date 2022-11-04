@@ -8,9 +8,10 @@ from torchsummary import summary
 from tqdm import trange
 import os
 import gc
+from monai.inferers import sliding_window_inference
 
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
-from src.utils.configurator import TrainConfigs, DatasetConfigs
+from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs
 from src.models.segmentation_architecture import get_model
 from src.datasets.dataset import BrainDataset
 from src.utils.schedulers import get_scheduler
@@ -152,6 +153,11 @@ def train(configs: Dict) -> None:
         scheduler, train_configs
     )
 
+def validate(configs: Dict):
+    validation_configs = ValidationConfigs(configs["validation_configs"])
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="Glioma Segmentation Framework",
@@ -167,3 +173,5 @@ if __name__ == "__main__":
 
     if args.mode == "train":
         train(configs)
+    elif args.mode == "validation":
+        validate(configs)

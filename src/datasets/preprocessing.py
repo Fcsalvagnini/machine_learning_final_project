@@ -51,6 +51,35 @@ class BrainPreProcessing:
 
     def _concatenate_voxel(self, *voxels: List[torch.Tensor], axis: int=0) -> torch.Tensor:
         return torch.cat(*voxels, axis=axis)
+        
+    def _prepare_nib_data(
+        self,
+        image_path: str,
+        preprocess_fn: Callable,
+        as_torch_tensor: bool = True,
+        dtype: Literal["uint8", "int16"] = "uint8",
+        in_img: bool = False
+        ) -> torch.Tensor:
+        
+        voxel = self._nib_load_images(image_path=image_path, in_img=in_img)
+        tensor_dtype = getattr(torch, dtype)
+
+        if (preprocess_fn):
+            voxel = np.expand_dims(voxel, axis=0)
+            if in_img:
+                voxel = self._normalize(voxel)        
+                voxel = preprocess_fn(voxel)
+        else:
+            voxel = np.expand_dims(voxel, axis=0).astype(np.int16)
+            #voxel = torch.from_numpy(voxel).type(tensor_dtype)
+            if in_img:
+                voxel = self._normalize(voxel)        
+            #return voxel
+
+        if as_torch_tensor:
+            voxel = voxel.as_tensor().type(tensor_dtype)
+            
+        return voxel
 
 
     def load_data(
@@ -73,33 +102,9 @@ class BrainPreProcessing:
                 images_path
                 )
             )
-        
+
         if len(images_path) > 1:
             conc_voxel = self._concatenate_voxel(voxels)    
             return conc_voxel
         else:
             return voxels[0]
-        
-
-    def _prepare_nib_data(
-        self,
-        image_path: str,
-        preprocess_fn: Callable,
-        as_torch_tensor: bool = True,
-        dtype: Literal["uint8", "int16"] = "uint8",
-        in_img: bool = False
-        ) -> torch.Tensor:
-        
-        voxel = self._nib_load_images(image_path=image_path, in_img=in_img)
-
-        if (preprocess_fn):
-            voxel = np.expand_dims(voxel, axis=0)
-            if in_img:
-                voxel = self._normalize(voxel)        
-            voxel = preprocess_fn(voxel)
-    
-        tensor_dtype = getattr(torch, dtype)
-        if as_torch_tensor:
-            voxel = voxel.as_tensor().type(tensor_dtype)
-            
-        return voxel

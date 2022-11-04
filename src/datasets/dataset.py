@@ -72,11 +72,14 @@ class BrainDataset(Dataset):
         y_brats_file = list(map(lambda gt_brats_type:
             os.path.join(self._data_path, f"{brats_id}/{brats_id}_{gt_brats_type}.nii.gz"), self.gt_brats_types))
 
-        fn_random_spatial_crop = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
+        if self._phase == "test":
+            preprocess_fn = None
+        else:
+            preprocess_fn = BrainPreProcessing.random_spatial_crop(self._voxel_homog_size)
 
         x_brats = self._brain_preprocess.load_data(
             images_path=x_brats_files,
-            preprocess_fn=fn_random_spatial_crop,
+            preprocess_fn=preprocess_fn,
             as_torch_tensor=True,
             in_img=True,
             dtype="float32"
@@ -84,7 +87,7 @@ class BrainDataset(Dataset):
 
         y_brats = self._brain_preprocess.load_data(
             images_path=y_brats_file,
-            preprocess_fn=fn_random_spatial_crop,
+            preprocess_fn=preprocess_fn,
             as_torch_tensor=True,
             dtype="uint8"
         )
@@ -94,7 +97,7 @@ class BrainDataset(Dataset):
         else:
             x_brats, y_brats = self._brain_preprocess.to_tensor_transform(x_brats, y_brats) 
 
-        x_brats, y_brats = x_brats.type(torch.float16), y_brats.type(torch.int8)
+        x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
 
         return x_brats, y_brats
 
@@ -119,7 +122,7 @@ if __name__ == "__main__":
     print(ds_cfg.__dict__)
 
     train_dataset = BrainDataset(ds_cfg, phase="train", num_concat=2)
-    valid_dataset = BrainDataset(ds_cfg, phase="validation", num_concat=2)
+    valid_dataset = BrainDataset(ds_cfg, phase="test", num_concat=2)
 
     batch_size = 4
     train_dataloader = DataLoader(
@@ -142,13 +145,18 @@ if __name__ == "__main__":
         x_train, y_train = next(train_interator)
         x_valid, y_valid = next(valid_interator)
 
+        print(f"x_max train: {torch.amax(x_train)}")
+        print(f"x_max test: {torch.amax(x_valid)}")
         print(f"y_max train: {torch.amax(y_train)}")
-        print(f"y_max valid: {torch.amax(y_valid)}")
+        print(f"y_max test: {torch.amax(y_valid)}")
         print(f"x train type: {type(x_train)})")
         print(f"y train type: {type(y_train)})")
-        print(f"x valid type: {type(x_valid)})")
-        print(f"y valid type: {type(y_train)})")
+        print(f"x test type: {type(x_valid)})")
+        print(f"y test type: {type(y_train)})")
         print(f"x train type: {x_train.dtype})")
         print(f"y train type: {y_train.dtype})")
-        print(f"x valid type: {x_valid.dtype})")
-        print(f"y valid type: {y_train.dtype})")
+        print(f"x test type: {x_valid.dtype})")
+        print(f"y test type: {y_train.dtype})")
+        print(f"x shape: {x_valid.shape})")
+        print(f"y shape: {y_valid.shape})")
+        

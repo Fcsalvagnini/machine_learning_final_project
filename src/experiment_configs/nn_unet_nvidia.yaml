@@ -17,8 +17,8 @@ train_configs:
     scheduler_fn: WarmupCosineSchedule
     from_monai: true
     scheduler_kwargs:
-      warmup_steps: 10
-      t_total: 100
+      warmup_steps: 1000
+      t_total: 200
       cycles: 0.5
   data_loader:
     dataset:

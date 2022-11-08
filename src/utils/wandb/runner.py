@@ -28,8 +28,6 @@ class WandbArtifactRunner:
             _description_
         wandb_secret_key : Wandb user secret key
             _description_
-        wandb_experiment_id : Wandb experiment id
-            _description_
         wandb_experiment_name : Wandb experiment name
             _description_
         wandb_experiment_description : Optional[str], optional

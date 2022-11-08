@@ -113,6 +113,16 @@ class ModelConfigs(Configurations):
 
         self.setattrs(configurations=configurations)
 
+
+class WandbInfo(Configurations):
+    def __init__(self, configurations: Dict) -> None:
+        self.wandb_entity: str
+        self.wandb_project: str
+        self.wandb_secret_key: str
+
+        self.setattrs(configurations=configurations)
+
+
 if __name__ == "__main__":
     # Parses the experiment configurations
     with open("../experiment_configs/sample_config.yaml") as yaml_file:

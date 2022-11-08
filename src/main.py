@@ -14,21 +14,28 @@ from monai.inferers import sliding_window_inference
 from monai.losses import DiceLoss
 from monai.metrics import DiceMetric
 
+from wandb.apis.public import Run
+
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
-from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs
+from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs, WandbInfo
 from src.models.segmentation_architecture import get_model
 from src.datasets.dataset import BrainDataset
 from src.utils.schedulers import get_scheduler
 from src.utils.callbacks import SaveBestModel
 
+from src.utils.wandb.runner import WandbArtifactRunner
+from src.utils.wandb.logger import WandbLogger
+
 from torch.utils.data import DataLoader
+
+
 
 def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
                 epoch):
     model.train()
     model.to("cuda")
     running_loss = 0
-
+    
     with trange(len(dataloader), desc="Train Loop") as progress_bar:
         for batch_idx, batch in zip(progress_bar, dataloader):
             volumetric_image, segmentation_mask = [
@@ -83,7 +90,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
     return epoch_loss
 
 def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
-            scheduler, train_configs):
+            scheduler, train_configs, run: Run):
     os.makedirs(train_configs.checkpoints_path, exist_ok=True)
     monitoring_metrics = {
         "loss": {"train": [], "validation": []}
@@ -101,9 +108,29 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
         )
         scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
+    # [ ] - run.log or wandb.log
+    run.log(
+        monitoring_metrics
+    )
+
 def train(configs: Dict) -> None:
+
+    
     torch.cuda.set_device(1)
     train_configs = TrainConfigs(configs["train_configs"])
+    wandb_info = WandbInfo(train_configs["wandb_info"])
+    
+    wandb_info.update({
+        "wandb_experiment_id": 1,
+        "wandb_experiment_name": train_configs["model_tag"]
+    })
+
+    run = WandbArtifactRunner.run(**wandb_info)
+    """
+    TODO:
+        [ ] -  Get lattest wandb_experiment_id with same wandb_experiment_name
+        [ ] -  
+    """
     train_dataset_configs = DatasetConfigs(configs["train_configs"]["data_loader"]["dataset"])
     train_dataset = BrainDataset(
         cfg=train_dataset_configs,
@@ -155,7 +182,7 @@ def train(configs: Dict) -> None:
 
     train_loop(
         model, train_dataloader, validation_dataloader, optmizer, loss,
-        scheduler, train_configs
+        scheduler, train_configs, run=run
     )
 
 def validate(configs: Dict):
@@ -216,6 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("mode", help="Execution mode (train or test)")
     parser.add_argument("config_file", help="Path to configuration file (YAML)")
     args = parser.parse_args()
+    
 
     with open(args.config_file) as yaml_file:
         configs = yaml.load(yaml_file, Loader=yaml.FullLoader)

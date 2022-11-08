@@ -1,5 +1,9 @@
 # Report about the removal of the background
 train_configs:
+  wandb_info:
+    wandb_entity: mlpf-mls
+    wandb_project: brats-2021
+    wandb_secret_key: <>   
   model_tag: nnU-Net_Nvidia
   checkpoints_path: checkpoints_nnu_net_nvidia/
   logging_level: INFO

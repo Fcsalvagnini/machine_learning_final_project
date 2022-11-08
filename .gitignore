@@ -6,3 +6,5 @@ databases/
 *.zip
 result_images/
 *.npy
+
+.env

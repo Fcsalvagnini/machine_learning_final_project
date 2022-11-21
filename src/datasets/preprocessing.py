@@ -5,7 +5,7 @@ import nibabel as nib
 import numpy as np
 
 import torch
-
+import random
 from typing import Dict, List
 from typing import Optional, Callable, Tuple, Literal
 
@@ -24,12 +24,17 @@ class BrainPreProcessing:
     @staticmethod
     def crop_foreground(image):
         return mn.transforms.CropForeground()(image)
-
-
     
     def _normalize(self, image):
-        return mn.transforms.NormalizeIntensity()(image)
+        image = torch.Tensor(image)
+        non_zero_voxels = image[image != 0]
+        mean = torch.mean(non_zero_voxels)
+        std = torch.std(non_zero_voxels)
 
+        normalized_image = image
+        normalized_image[image != 0] = (non_zero_voxels - mean) / std
+
+        return normalized_image
 
     def to_tensor_transform(self, x, y):
         return AugmentationPipeline({
@@ -38,7 +43,6 @@ class BrainPreProcessing:
                 "track_meta": False,
             }
         })(x, y)
-
 
     @staticmethod
     def random_spatial_crop(self, voxel_homo_size: int = 128) -> Callable:

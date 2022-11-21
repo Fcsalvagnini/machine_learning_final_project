@@ -26,6 +26,6 @@ class LossBraTS(nn.Module):
 
     def forward(self, p, y):
         y_wt, y_tc, y_et = y > 0, ((y == 1) + (y == 3)) > 0, y == 3
-        p_wt, p_tc, p_et = p[:, 0].unsqueeze(1), p[:, 1].unsqueeze(1), p[:, 2].unsqueeze(1)
+        p_wt, p_tc, p_et = p[:, 0], p[:, 1], p[:, 2]
         l_wt, l_tc, l_et = self._loss(p_wt, y_wt), self._loss(p_tc, y_tc), self._loss(p_et, y_et)
         return l_wt + l_tc + l_et

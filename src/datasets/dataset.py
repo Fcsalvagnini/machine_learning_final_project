@@ -120,7 +120,7 @@ class BrainDataset(Dataset):
         # multi_slice_viewer(xx1, xx[1])
         # multi_slice_viewer(yy0, yy[0])
         
-        return x_brats, y_brats
+        return x_brats, y_brats.squeeze()
 
         return to_return
 

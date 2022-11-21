@@ -22,7 +22,8 @@ NORMALIZATIONS = {
 
 ACTIVATIONS = {
     "LeakyReLU": torch.nn.LeakyReLU,
-    "Sigmoid": torch.nn.Sigmoid
+    "Sigmoid": torch.nn.Sigmoid,
+    "Softmax": torch.nn.Softmax2d
 }
 
 LOSSES = {

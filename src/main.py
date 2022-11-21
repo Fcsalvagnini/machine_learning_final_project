@@ -22,20 +22,20 @@ from src.models.segmentation_architecture import get_model
 from src.datasets.dataset import BrainDataset
 from src.utils.schedulers import get_scheduler
 from src.utils.callbacks import SaveBestModel
+from src.metrics.dice import DiceMetric
 
 from src.utils.wandb.runner import WandbArtifactRunner
 from src.utils.wandb.logger import WandbLogger
 
 from torch.utils.data import DataLoader
 
-
-
-def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
+def run_train_epoch(model, optimizer, loss, dice_metric, dataloader, monitoring_metrics,
                 epoch):
     model.train()
     model.to("cuda")
     running_loss = 0
-    
+    running_dice = 0
+
     with trange(len(dataloader), desc="Train Loop") as progress_bar:
         for batch_idx, batch in zip(progress_bar, dataloader):
             volumetric_image, segmentation_mask = [
@@ -43,14 +43,16 @@ def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
             ]
             optimizer.zero_grad()
             predicted_segmentation = model(volumetric_image)
+            
             batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
             batch_loss.backward()
             optimizer.step()
 
             running_loss += batch_loss.cpu()
+            running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_mask)).cpu()
 
             progress_bar.set_postfix(
-                desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f}"
+                desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
             )
 
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
@@ -58,8 +60,9 @@ def run_train_epoch(model, optimizer, loss, dataloader, monitoring_metrics,
 
     return epoch_loss
 
-def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics,
-                epoch, configurations, save_best_model):
+def run_validation_epcoch(model, optimizer, loss, dice_metric, dataloader, 
+                monitoring_metrics, epoch, configurations, 
+                save_best_model):
     with torch.no_grad():
         torch.cuda.empty_cache()
         gc.collect()
@@ -67,6 +70,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
         model.to("cuda")
         model.eval()
         running_loss = 0
+        running_dice = 0
 
         with trange(len(dataloader), desc="Validation Loop") as progress_bar:
             for batch_idx, batch in zip(progress_bar, dataloader):
@@ -77,9 +81,10 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
                 batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
 
                 running_loss += batch_loss.cpu()
+                running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_mask)).cpu()
 
                 progress_bar.set_postfix(
-                    desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f}"
+                    desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
                 )
 
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
@@ -90,7 +95,7 @@ def run_validation_epcoch(model, optimizer, loss, dataloader, monitoring_metrics
     return epoch_loss
 
 def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
-            scheduler, train_configs, run: Run):
+            dice_metric, scheduler, train_configs):
     os.makedirs(train_configs.checkpoints_path, exist_ok=True)
     monitoring_metrics = {
         "loss": {"train": [], "validation": []}
@@ -99,14 +104,14 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
 
     for epoch in range(1, train_configs.epochs + 1):
         train_loss = run_train_epoch(
-            model, optmizer, loss, train_dataloader, monitoring_metrics,
+            model, optmizer, loss, dice_metric, train_dataloader, monitoring_metrics,
             epoch
         )
         valid_loss = run_validation_epcoch(
-            model, optmizer, loss, validation_dataloader, monitoring_metrics,
+            model, optmizer, loss, dice_metric, validation_dataloader, monitoring_metrics,
             epoch, train_configs, save_best_model
         )
-        scheduler.step(monitoring_metrics["loss"]["validation"][-1])
+        #scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
     # [ ] - run.log or wandb.log
     run.log(
@@ -114,9 +119,8 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
     )
 
 def train(configs: Dict) -> None:
-
-    
     torch.cuda.set_device(1)
+    torch.cuda.set_device(0)
     train_configs = TrainConfigs(configs["train_configs"])
     wandb_info = WandbInfo(train_configs["wandb_info"])
     
@@ -171,18 +175,20 @@ def train(configs: Dict) -> None:
     )
 
     loss = LOSSES[train_configs.loss["name"]](**train_configs.loss["parameters"])
+    dice_metric = DiceMetric(n_class=3, brats=True)
     optmizer = OPTIMIZERS[train_configs.optimizer["name"]](
         model.parameters(), **train_configs.optimizer["parameters"]
     )
-    scheduler = get_scheduler(
-        train_configs.scheduler.scheduler_fn,
-        optimizer=optmizer, from_monai=train_configs.scheduler.from_monai,
-        **train_configs.scheduler.scheduler_kwargs
-    )
+    #scheduler = get_scheduler(
+    #    train_configs.scheduler.scheduler_fn,
+    #    optimizer=optmizer, from_monai=train_configs.scheduler.from_monai,
+    #    **train_configs.scheduler.scheduler_kwargs
+    #)
+    scheduler=None
 
     train_loop(
-        model, train_dataloader, validation_dataloader, optmizer, loss,
-        scheduler, train_configs, run=run
+        model, train_dataloader, validation_dataloader, optmizer, loss, dice_metric,
+        scheduler, train_configs
     )
 
 def validate(configs: Dict):

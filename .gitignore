@@ -6,5 +6,6 @@ databases/
 *.zip
 result_images/
 *.npy
-
 .env
+checkpoints*
+*.swp

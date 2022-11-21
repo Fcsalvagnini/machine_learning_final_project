@@ -101,6 +101,7 @@ class SegmentationModel(nn.Module):
                     x = torch.concat([x, intermediate_representation], dim=1)
                     first_block = False
                 x = decoder_block.forward(x)
+        #print(x.shape)
 
         return x
 

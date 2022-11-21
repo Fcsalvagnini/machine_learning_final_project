@@ -5,7 +5,7 @@ train_configs:
     wandb_project: brats-2021
     wandb_secret_key: <>   
   model_tag: nnU-Net_Nvidia
-  checkpoints_path: checkpoints_nnu_net_nvidia/
+  checkpoints_path: checkpoints_nnu_net_nvidia_normalized/
   logging_level: INFO
   epochs: 1000
   batch_size: 2
@@ -33,20 +33,9 @@ train_configs:
         augmentations:
           RandGaussianNoised:
             apply_on_label: false
-            prob: 0.15
+            prob: 0.0015
             mean: 0
             std: 0.15
-          RandAffined:
-            apply_on_label: true
-            mode: ["bilinear", "nearest"]
-            prob: 0.15
-            translate_range: [40, 40, 2]
-            scale_range: [0.4, 0.4, 0.4]
-            padding_mode: "border"
-          GaussianSmoothd:
-            apply_on_label: false
-            sigma: 0.5
-
       patch_training: true
 
 validation_configs:
@@ -488,12 +477,10 @@ model:
         negative_slope: 0.1
       conv_3:
         in_channels: 64
-        out_channels: 3 # Tumor Classes
+        out_channels: 3 # Tumor Classes - Does not consider background
         kernel_size: [1, 1, 1]
         stride: [1, 1, 1]
         padding: 0
-      activation_3:
-        type: Sigmoid
   skip_connections:
     # Without skip connections for depth 6 and 7
     skip_1: null

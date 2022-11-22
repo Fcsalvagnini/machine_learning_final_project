@@ -1,6 +1,6 @@
-from .artifact_downloader import WandbArtifactDownloader
-from .artifact_logger import WandbArtifactLogger
-from .atifact_checker import WandbArtifactChecker
-from .runner import WandbArtifactRunner
+from src.utils.wandb.artifact_downloader import WandbArtifactDownloader
+from src.utils.wandb.artifact_logger import WandbArtifactLogger
+from src.utils.wandb.atifact_checker import WandbArtifactChecker
+from src.utils.wandb.runner import WandbArtifactRunner
 
 __all__ = ["WandbArtifactRunner", "WandbArtifactLogger", "WandbArtifactDownloader", "WandbArtifactChecker"]

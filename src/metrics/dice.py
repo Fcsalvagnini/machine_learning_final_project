@@ -29,6 +29,9 @@ class DiceMetric():
         else:
             p, y = self.ohe(torch.argmax(p, dim=1)), self.ohe(y)
 
+        y = y.squeeze()
+        # Removes first dimension, when dealing of a batch size of 1
+        p = p.squeeze()
         dice = self.compute_metric(p, y, compute_dice, 1, 0)
 
         return dice * 100

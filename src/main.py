@@ -14,7 +14,7 @@ from monai.inferers import sliding_window_inference
 from monai.losses import DiceLoss
 from monai.metrics import DiceMetric
 
-from wandb.apis.public import Run
+#from wandb.apis.public import Run
 
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
 from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs, WandbInfo
@@ -24,8 +24,8 @@ from src.utils.schedulers import get_scheduler
 from src.utils.callbacks import SaveBestModel
 from src.metrics.dice import DiceMetric
 
-from src.utils.wandb.runner import WandbArtifactRunner
-from src.utils.wandb.logger import WandbLogger
+#from src.utils.wandb.runner import WandbArtifactRunner
+#from src.utils.wandb.logger import WandbLogger
 
 from torch.utils.data import DataLoader
 
@@ -114,22 +114,21 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
         #scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
     # [ ] - run.log or wandb.log
-    run.log(
-        monitoring_metrics
-    )
+    #run.log(
+    #    monitoring_metrics
+    #)
 
 def train(configs: Dict) -> None:
-    torch.cuda.set_device(1)
     torch.cuda.set_device(0)
     train_configs = TrainConfigs(configs["train_configs"])
-    wandb_info = WandbInfo(train_configs["wandb_info"])
+    #wandb_info = WandbInfo(train_configs["wandb_info"])
     
-    wandb_info.update({
-        "wandb_experiment_id": 1,
-        "wandb_experiment_name": train_configs["model_tag"]
-    })
+    #wandb_info.update({
+    #    "wandb_experiment_id": 1,
+    #    "wandb_experiment_name": train_configs["model_tag"]
+    #})
 
-    run = WandbArtifactRunner.run(**wandb_info)
+    #run = WandbArtifactRunner.run(**wandb_info)
     """
     TODO:
         [ ] -  Get lattest wandb_experiment_id with same wandb_experiment_name

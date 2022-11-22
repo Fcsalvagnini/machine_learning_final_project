@@ -3,7 +3,7 @@ import torch
 
 class SaveBestModel:
     def __init__(self):
-        self.best_valid_loss = float('-inf')
+        self.best_valid_loss = float('inf')
         
     def __call__(
             self, current_valid_loss, epoch, model, configurations

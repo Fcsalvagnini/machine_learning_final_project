@@ -76,6 +76,7 @@ class TrainConfigs(Configurations):
         self.optimizer: dict = {}
         self.scheduler: Configurations = SchedulerConfigs(configurations={})
         self.logging_level: str = "INFO"
+        self.gpu_id: int = 0
 
         self.data_loader: Configurations = DataLoaderConfigs(configurations={})
 

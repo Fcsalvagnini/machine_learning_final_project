@@ -119,8 +119,8 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
     #)
 
 def train(configs: Dict) -> None:
-    torch.cuda.set_device(0)
     train_configs = TrainConfigs(configs["train_configs"])
+    torch.cuda.set_device(train_configs.gpu_id)
     #wandb_info = WandbInfo(train_configs["wandb_info"])
     
     #wandb_info.update({
@@ -201,9 +201,6 @@ def validate(configs: Dict):
     validation_test_dataloader = DataLoader(
         validation_test_dataset, batch_size=1
     )
-
-    from monai.losses import DiceLoss
-    dice_loss = DiceLoss(sigmoid=True, batch=True)
 
     model = get_model(configs)
     model.load_state_dict(torch.load(validation_configs.checkpoint_path))

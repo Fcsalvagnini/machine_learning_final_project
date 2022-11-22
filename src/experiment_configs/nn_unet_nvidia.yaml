@@ -4,6 +4,7 @@ train_configs:
     wandb_entity: mlpf-mls
     wandb_project: brats-2021
     wandb_secret_key: <>   
+  gpu_id: 0
   model_tag: nnU-Net_Nvidia
   checkpoints_path: checkpoints_nnu_net_nvidia_normalized_test/
   logging_level: INFO

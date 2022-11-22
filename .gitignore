@@ -9,3 +9,4 @@ result_images/
 .env
 checkpoints*
 *.swp
+.vscode/

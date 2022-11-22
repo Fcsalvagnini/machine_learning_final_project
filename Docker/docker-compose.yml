@@ -17,7 +17,7 @@ services: # containers
       dockerfile: ./Dockerfile
       args:
         - user_name=john_doe
-        - user_id=1000 # ** [TODO] REPLACE BY YOUR USER ID TO AVOID PERMISSION ISSUES **
+        - user_id=$${id -u} # ** [TODO] REPLACE BY YOUR USER ID TO AVOID PERMISSION ISSUES **
 
     container_name: mo444
     image: mo444

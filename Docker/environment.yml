@@ -77,3 +77,26 @@ dependencies: # Conda packages
     - flake8
     - plotly
     - streamlit
+    - wandb
+    - skimage
+    - ignite
+    - ignite
+    - lmdb
+    - cucim
+    - openslide
+    - einops
+    - einops
+    - tensorboardX
+    - imagecodecs
+    - pyyaml
+    - fire
+    - jsonschema
+    - ninja
+    - pynrrd
+    - pydicom
+    - h5py
+    - nni
+    - optuna
+    - tifffile
+    - gradio
+    - nvidia-dali-cuda110

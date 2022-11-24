@@ -1,5 +1,5 @@
-from src.utils.json.json_handler import JsonHandler
+from src.utils.json.json_handler import parse_json_to_dict
 
 __all__ = [
-    "JsonHandler"
+    "parse_json_to_dict"
 ]

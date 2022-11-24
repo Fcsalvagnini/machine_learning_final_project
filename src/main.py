@@ -23,6 +23,7 @@ from src.datasets.dataset import BrainDataset
 from src.utils.schedulers import get_scheduler
 from src.utils.callbacks import SaveBestModel
 from src.metrics.dice import DiceMetric
+from src.utils.csv.csv_writter import CsvWritter
 
 #from src.utils.wandb.runner import WandbArtifactRunner
 #from src.utils.wandb.logger import WandbLogger
@@ -56,11 +57,11 @@ def run_train_epoch(model, optimizer, loss, dice_metric, dataloader, monitoring_
             )
 
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
+    epoch_dice = (running_dice / len(dataloader)).detach().numpy()
     monitoring_metrics["loss"]["train"].append(epoch_loss)
+    monitoring_metrics["dice"]["train"].append(epoch_dice)
 
-    return epoch_loss
-
-def run_validation_epcoch(model, optimizer, loss, dice_metric, dataloader, 
+def run_validation_epoch(model, loss, dice_metric, dataloader,
                 monitoring_metrics, epoch, configurations, 
                 save_best_model):
     with torch.no_grad():
@@ -88,29 +89,47 @@ def run_validation_epcoch(model, optimizer, loss, dice_metric, dataloader,
                 )
 
     epoch_loss = (running_loss / len(dataloader)).detach().numpy()
+    epoch_dice = (running_dice / len(dataloader)).detach().numpy()
     monitoring_metrics["loss"]["validation"].append(epoch_loss)
+    monitoring_metrics["dice"]["validation"].append(epoch_dice)
 
     save_best_model(epoch_loss, epoch, model, configurations)
-
-    return epoch_loss
 
 def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
             dice_metric, scheduler, train_configs):
     os.makedirs(train_configs.checkpoints_path, exist_ok=True)
     monitoring_metrics = {
-        "loss": {"train": [], "validation": []}
+        "loss": {"train": [], "validation": []},
+        "dice": {"train": [], "validation": []}
     }
     save_best_model = SaveBestModel()
+    csv_path = os.path.join(train_configs.checkpoints_path, "train_history.csv")
+    csv_writer = CsvWritter(
+        path=csv_path,
+        header=[
+            "epoch", "train_loss", "train_dice", "validation_loss",
+            "validation_dice"
+        ]
+    )
 
     for epoch in range(1, train_configs.epochs + 1):
-        train_loss = run_train_epoch(
+        run_train_epoch(
             model, optmizer, loss, dice_metric, train_dataloader, monitoring_metrics,
             epoch
         )
-        valid_loss = run_validation_epcoch(
-            model, optmizer, loss, dice_metric, validation_dataloader, monitoring_metrics,
+        run_validation_epoch(
+            model, loss, dice_metric, validation_dataloader, monitoring_metrics,
             epoch, train_configs, save_best_model
         )
+        csv_writer.write_line(
+            content=[
+                epoch, monitoring_metrics["loss"]["train"][-1],
+                monitoring_metrics["dice"]["train"][-1],
+                monitoring_metrics["loss"]["validation"][-1],
+                monitoring_metrics["dice"]["validation"][-1]
+                ]
+        )
+
         #scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
     # [ ] - run.log or wandb.log
@@ -178,11 +197,6 @@ def train(configs: Dict) -> None:
     optmizer = OPTIMIZERS[train_configs.optimizer["name"]](
         model.parameters(), **train_configs.optimizer["parameters"]
     )
-    #scheduler = get_scheduler(
-    #    train_configs.scheduler.scheduler_fn,
-    #    optimizer=optmizer, from_monai=train_configs.scheduler.from_monai,
-    #    **train_configs.scheduler.scheduler_kwargs
-    #)
     scheduler=None
 
     train_loop(

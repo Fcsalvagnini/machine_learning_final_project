@@ -13,7 +13,7 @@ from typing import Dict, List
 from typing import Callable, Optional, Sequence, Tuple, Union, Literal
 
 from monai import transforms as mtransforms
-from . import JsonHandler
+from . import parse_json_to_dict
 from .preprocessing import BrainPreProcessing
 
 from src.augmentation.augmentations import AugmentationPipeline
@@ -33,6 +33,7 @@ class BrainDataset(Dataset):
         self._phase = phase
         self._num_concat = num_concat
         self._data_path = cfg.data_path
+        self._data_descriptors_path = cfg.data_descriptors_path
         self._transforms = cfg.transforms
         self._voxel_homog_size = cfg.voxel_homog_size
 
@@ -54,8 +55,9 @@ class BrainDataset(Dataset):
         _phase = self._phase
         if _phase == "validation_test":
             _phase = "validation"
-        return JsonHandler.parse_json_to_dict(
-            phase=_phase)["ids"]
+        return parse_json_to_dict(
+            self._data_descriptors_path, phase=_phase
+        )["ids"]
 
     def _get_brats_types_concat(self):
         if self._num_concat == 2:

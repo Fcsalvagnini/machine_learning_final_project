@@ -39,8 +39,9 @@ class AugmentationsConfigs(Configurations):
 
 class DatasetConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
-        self.data_path: str = None
-        self.phase: str = None
+        self.data_path: str = ""
+        self.data_descriptors_path: str = ""
+        self.phase: str = ""
         self.voxel_homog_size: int = 128
         self.transforms: Configurations = AugmentationsConfigs(configurations={})
 

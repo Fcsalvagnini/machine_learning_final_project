@@ -6,7 +6,7 @@ train_configs:
     wandb_secret_key: <>   
   gpu_id: 0
   model_tag: nnU-Net_Nvidia
-  checkpoints_path: checkpoints_nnu_net_nvidia_normalized_test/
+  checkpoints_path: checkpoints_nnu_net_nvidia_normalized_bias_corrected/
   logging_level: INFO
   epochs: 1000
   batch_size: 2
@@ -41,7 +41,7 @@ train_configs:
 
 validation_configs:
   model_tag: nnU-Net_Nvidia
-  checkpoint_path: "checkpoints_nnu_net_nvidia/nnU-Net_Nvidia_epoch_126_loss_3.416630268096924.pth"
+  checkpoint_path: "checkpoints_nnu_net_nvidia_normalized_test/nnU-Net_Nvidia_epoch_123_loss_0.3122687339782715.pth"
   data_loader:
     dataset:
       data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"

@@ -104,10 +104,12 @@ class BrainDataset(Dataset):
 
         if self._transforms and self._phase == "train":    
             x_brats, y_brats = self._transforms(x_brats, y_brats)
+            x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
+            to_return = (x_brats, y_brats)
         else:
             x_brats, y_brats = self._brain_preprocess.to_tensor_transform(x_brats, y_brats) 
-
-        x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
+            x_brats, y_brats = x_brats.type(torch.float32), y_brats.type(torch.int8)
+            to_return = (x_brats, y_brats), os.path.join(self._data_path, f"{brats_id}/{brats_id}")
 
         # x_brats_np, y_brats_np = x_brats.numpy(), y_brats.numpy()
         # xx = list(map(lambda x, name: save(x, name), x_brats, x_brats_files))
@@ -120,8 +122,6 @@ class BrainDataset(Dataset):
         # multi_slice_viewer(xx1, xx[1])
         # multi_slice_viewer(yy0, yy[0])
         
-        return x_brats, y_brats
-
         return to_return
 
     def __len__(self) -> int:

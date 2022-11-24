@@ -7,14 +7,14 @@ import sys
 import csv
 import yaml
 from torchsummary import summary
-from tqdm import trange
+from tqdm import trange, tqdm
 import os
 import gc
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceLoss
-from monai.metrics import DiceMetric
-
 #from wandb.apis.public import Run
+
+import nibabel as nib
 
 from src.utils.global_vars import LOGGING_LEVEL, LOSSES, OPTIMIZERS
 from src.utils.configurator import TrainConfigs, DatasetConfigs, ValidationConfigs, WandbInfo
@@ -75,7 +75,7 @@ def run_validation_epcoch(model, optimizer, loss, dice_metric, dataloader,
         with trange(len(dataloader), desc="Validation Loop") as progress_bar:
             for batch_idx, batch in zip(progress_bar, dataloader):
                 volumetric_image, segmentation_mask = [
-                    data.to("cuda") for data in batch
+                    data.to("cuda") for data in batch[0]
                 ]
                 predicted_segmentation = model(volumetric_image)
                 batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
@@ -190,7 +190,24 @@ def train(configs: Dict) -> None:
         scheduler, train_configs
     )
 
+def save_prediction(image, path_to_save):
+    image = torch.sigmoid(image.cpu())
+    prediction_final = np.zeros((240, 240, 155), np.uint8)
+    idx = image[0, 0] > 0.5
+    prediction_final[idx] = 1
+    idx = image[0, 1] > 0.5
+    prediction_final[idx] = 2
+    idx = image[0, 2] > 0.5
+    prediction_final[idx] = 3
+
+    niivol = nib.Nifti1Image(prediction_final, np.eye(4))
+    niivol.header.get_xyzt_units()
+    niivol.to_filename(path_to_save)
+
+
 def validate(configs: Dict):
+    torch.cuda.set_device(1)
+    train_configs = TrainConfigs(configs["train_configs"])
     validation_configs = ValidationConfigs(configs["validation_configs"])
     validation_dataset_configs = DatasetConfigs(configs["validation_configs"]["data_loader"]["dataset"])
     validation_test_dataset = BrainDataset(
@@ -204,7 +221,7 @@ def validate(configs: Dict):
 
     model = get_model(configs)
     model.load_state_dict(torch.load(validation_configs.checkpoint_path))
-    dice_calculator = DiceMetric(include_background=False, reduction="mean")
+    dice_calculator = DiceMetric(3, True)
 
     with torch.no_grad():
         torch.cuda.empty_cache()
@@ -212,26 +229,19 @@ def validate(configs: Dict):
 
         model.to("cuda")
         model.eval()
-        to_csv = [["image_path", "dice_score", "dice_max", "voxel_max_prob"]]
+        to_csv = [["image_path", "dice_score"]]
 
-        for image in validation_test_dataloader:
+        for image in tqdm(validation_test_dataloader):
             (x, y), path = image
             prediction = sliding_window_inference(x.to("cuda"), [128, 128, 128], 1, model)
-            prediction_final = torch.zeros(240, 240, 155)
-            idx = prediction[0, 0] > 0.3
-            prediction_final[idx] = 1
-            idx = prediction[0, 1] > 0.3
-            prediction_final[idx] = 2
-            idx = prediction[0, 2] > 0.3
-            prediction_final[idx] = 3
-            dice_max = dice_calculator(y, y)
-            dice_pred = dice_calculator(prediction_final[None, None, ...], y)
-            voxel_max_prob = np.max(prediction.cpu().detach().numpy())
-            path = path[0]
+            dice_pred = torch.mean(dice_calculator.compute(prediction, y.to("cuda")))
+            prediction_save_path = f"{path[0]}_pred_seg.nii.gz"
+            folder_path = os.path.join(*prediction_save_path.split("/")[:-1])
+            save_prediction(prediction, prediction_save_path)
 
-            to_csv.append([path, dice_pred.cpu().detach().numpy()[0][0], dice_max.cpu().detach().numpy()[0][0], voxel_max_prob])
+            to_csv.append([folder_path, dice_pred.cpu().detach().numpy()])
 
-    with open("first_results.csv", "w") as csvfile: 
+    with open("best_model_without_aug.csv", "w") as csvfile: 
         csvwriter = csv.writer(csvfile) 
         csvwriter.writerows(to_csv)
 

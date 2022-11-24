@@ -40,6 +40,12 @@ class DiceMetric():
         return one_hot(x, num_classes=self.n_class + 1, dim=1)
 
     def compute_metric(self, p, y, metric_fn, best_metric, worst_metric):
+        """If batch has only one image, returns batch dimmension after squeeze,
+        for correct metric calculation"""
+        if p.dim() == 4:
+            p = p.unsqueeze(0)
+            y = y.unsqueeze(0)
+
         metric = metric_fn(p, y, include_background=self.brats)
         metric = torch.nan_to_num(metric, nan=worst_metric, posinf=worst_metric, neginf=worst_metric)
         metric = do_metric_reduction(metric, "mean_batch")[0]

@@ -32,7 +32,9 @@ from torch.utils.data import DataLoader
 def run_train_epoch(model, optimizer, loss, dice_metric, dataloader, monitoring_metrics,
                 epoch):
     model.train()
-    model.to("cuda")
+    model = torch.nn.DataParallel(model,device_ids = [0])
+    #model.to(device)
+    model.to(torch.device("cuda"))
     running_loss = 0
     running_dice = 0
 
@@ -42,9 +44,14 @@ def run_train_epoch(model, optimizer, loss, dice_metric, dataloader, monitoring_
                 data.to("cuda") for data in batch
             ]
             optimizer.zero_grad()
-            predicted_segmentation = model(volumetric_image)
+            predicted_segmentation, deep_supervisions = model(volumetric_image, training=True)
             
             batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
+            
+            for i, ds in enumerate(deep_supervisions[::-1]):
+                segmentation_mask_interp = torch.nn.functional.interpolate(segmentation_mask.float(), size=ds.shape[2:], mode='nearest')
+                batch_loss += 0.5 ** (i+1) * loss.forward(ds, segmentation_mask_interp)
+            
             batch_loss.backward()
             optimizer.step()
 
@@ -120,7 +127,7 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
 
 def train(configs: Dict) -> None:
     train_configs = TrainConfigs(configs["train_configs"])
-    torch.cuda.set_device(train_configs.gpu_id)
+    #torch.cuda.set_device((1,3))
     #wandb_info = WandbInfo(train_configs["wandb_info"])
     
     #wandb_info.update({
@@ -167,11 +174,13 @@ def train(configs: Dict) -> None:
     logger.info(
         f"Started Training Experiment with Model Architecture:"
     )
-    summary(
-        model, input_size=(2, 128, 128, 128),
-        batch_size=train_configs.batch_size, show_input=True,
-        show_hierarchical=True
-    )
+    
+    #print(list(model.parameters())[0].device)
+    
+    #summary(
+    #    model, input_size=(2, 128, 128, 128),
+    #    batch_size=train_configs.batch_size, device='cpu'
+    #)
 
     loss = LOSSES[train_configs.loss["name"]](**train_configs.loss["parameters"])
     dice_metric = DiceMetric(n_class=3, brats=True)
@@ -245,7 +254,6 @@ if __name__ == "__main__":
     parser.add_argument("mode", help="Execution mode (train or test)")
     parser.add_argument("config_file", help="Path to configuration file (YAML)")
     args = parser.parse_args()
-    
 
     with open(args.config_file) as yaml_file:
         configs = yaml.load(yaml_file, Loader=yaml.FullLoader)

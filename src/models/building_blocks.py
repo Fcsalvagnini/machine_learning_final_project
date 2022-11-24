@@ -30,10 +30,11 @@ class Conv3DBlock(nn.Module):
         if self.activation:
             x = self.activation(x)
 
+        not_upsampled = x
         if self.upsampling:
             x = self.upsampling(x)
 
-        return x
+        return x, not_upsampled
 
     def _initialize_weights(self):
         for m in self.modules():

@@ -33,6 +33,7 @@ class SegmentationModel(nn.Module):
         self.encoder_layers = self.get_layers(model_configs.encoder)
         self.decoder_layers = self.get_layers(model_configs.decoder)
         self.skip_connections = self.get_skip_connections(model_configs.skip_connections)
+        self.deep_supervisions = self.get_deep_supervisison(model_configs.decoder)
 
         if len(self.skip_connections) < model_configs.depth:
             diff = model_configs.depth - len(self.skip_connections)
@@ -44,6 +45,17 @@ class SegmentationModel(nn.Module):
             skip_layers.append(True)
 
         return skip_layers
+        
+    def get_deep_supervisison(self, configs):
+        deep_supervisions = nn.ModuleList([])
+        for block_name, block_ops in zip(configs.block_names, configs.block_parameters):
+            block_layer = BUILDING_BLOCKS["_".join(block_name.split("_")[:-1])]
+            if "deep_supervision_1" in block_ops.keys():
+                deep_supervisions.append(block_layer(**block_ops["deep_supervision_1"]))
+            else:
+                deep_supervisions.append(torch.nn.Identity())
+
+        return deep_supervisions
 
     def get_layers(self, configs):
         # Blocks in the same U-Net level will be saved as as list
@@ -77,33 +89,42 @@ class SegmentationModel(nn.Module):
                         **conv_parameters, normalization=normalization, activation=activation, upsampling=upsampling
                     )
                 )
+                
+            
             layers_by_level = nn.ModuleList(layers_by_level)
 
             layers.extend([layers_by_level])
 
         return layers
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, training=False) -> torch.Tensor:
         intermediate_representations = []
 
         for encoder_layer in self.encoder_layers:
             for encoder_block in encoder_layer:
-                x = encoder_block.forward(x)
+                x, _ = encoder_block.forward(x)
             intermediate_representations.append(x)
 
-        for decoder_layer, skip, intermediate_representation in \
+        deep_supervisions_output = []
+
+        for decoder_layer, skip, intermediate_representation, deep_supervision in \
         zip(
-            self.decoder_layers, self.skip_connections[::-1], intermediate_representations[::-1]
+            self.decoder_layers, self.skip_connections[::-1], intermediate_representations[::-1], self.deep_supervisions
         ):
             first_block = True
             for decoder_block in decoder_layer:
                 if skip and first_block:
                     x = torch.concat([x, intermediate_representation], dim=1)
                     first_block = False
-                x = decoder_block.forward(x)
+                x, not_upsampled = decoder_block.forward(x)
+            if not isinstance(deep_supervision, nn.Identity):
+                deep_supervisions_output.append(deep_supervision(not_upsampled)[0])
         #print(x.shape)
 
-        return x
+        if training:
+            return x, deep_supervisions_output
+        else:
+            return x
 
 def get_model(configs):
     model_configs = ModelConfigs(configs["model"])

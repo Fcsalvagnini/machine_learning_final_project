@@ -1,0 +1,493 @@
+# Report about the removal of the background
+train_configs:
+  wandb_info:
+    wandb_entity: mlpf-mls
+    wandb_project: brats-2021
+    wandb_secret_key: <>   
+  gpu_id: 0
+  model_tag: nnU-Net_Nvidia_bias_fixed
+  checkpoints_path: checkpoints_nnu_net_nvidia_normalized_bias_fixed/
+  logging_level: INFO
+  epochs: 200
+  batch_size: 2
+  loss:
+    name: Loss_BraTS # Dice, Dice_Focal, Loss_BraTS
+    parameters:
+      focal: true
+  optimizer:
+    name: ADAM
+    parameters:
+      lr: 0.0005
+  scheduler:
+    scheduler_fn: WarmupCosineSchedule
+    from_monai: true
+    scheduler_kwargs:
+      warmup_steps: 1000
+      t_total: 200
+      cycles: 0.5
+  data_loader:
+    dataset:
+      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+      data_descriptors_path: "src/data/descriptors"
+      num_concat: 2 # 2 or 4
+      voxel_homog_kernel_size: 128
+      transforms:
+        augmentations:
+          RandGaussianNoised:
+            apply_on_label: false
+            prob: 0.0015
+            mean: 0
+            std: 0.15
+      patch_training: true
+
+validation_configs:
+  model_tag: nnU-Net_Nvidia_bias_fixed
+  checkpoint_path: "checkpoints_nnu_net_nvidia_normalized_bias_fixed/xxxx.pth"
+  data_loader:
+    dataset:
+      data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
+
+
+model:
+  name: nvidia_nnunet
+  depth: 7
+  encoder:
+    # Input Full-kernel_size or Patch kernel_size Image Modalities (B, M, C, H, W) e.g. (2, 2, 128, 128, 128)
+    conv_3D_block_1: # Outputs (B, 64, 128, 128, 128)
+      conv_1:
+        in_channels: 2
+        out_channels: 64
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 64
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 64
+        out_channels: 64
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 64
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_2: # Outputs (B, 96, 64, 64, 64)
+      conv_1:
+        in_channels: 64
+        out_channels: 96
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 96
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 96
+        out_channels: 96
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 96
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_3: # Outputs (B, 128, 32, 32, 32)
+      conv_1:
+        in_channels: 96
+        out_channels: 128
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 128
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 128
+        out_channels: 128
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 128
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_4: # Outputs (B, 192, 16, 16, 16)
+      conv_1:
+        in_channels: 128
+        out_channels: 192
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 192
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 192
+        out_channels: 192
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 192
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_5: # Outputs (B, 256, 8, 8, 8)
+      conv_1:
+        in_channels: 192
+        out_channels: 256
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 256
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 256
+        out_channels: 256
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 256
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_6: # Outputs (B, 384, 4, 4, 4)
+      conv_1:
+        in_channels: 256
+        out_channels: 384
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 384
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 384
+        out_channels: 384
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 384
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+    conv_3D_block_7: # Outputs (B, 512, 2, 2, 2)
+      conv_1:
+        in_channels: 384
+        out_channels: 512
+        kernel_size: [3, 3, 3]
+        stride: [2, 2, 2]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 512
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+  decoder:
+    conv_3D_block_1: # Outputs (B, 384, 4, 4, 4)
+      conv_1:
+        in_channels: 512
+        out_channels: 384
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 384
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_1:
+        # nearest | linear | bilinear | bicubic | trilinear | area | nearest-exact
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_2: # Outputs (B, 256, 8, 8, 8)
+      conv_1:
+        in_channels: 384
+        out_channels: 384
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 384
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 384
+        out_channels: 256
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 256
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_2:
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_3: # Outputs (B, 192, 16, 16, 16)
+      conv_1:
+        in_channels: 512
+        out_channels: 256
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 256
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 256
+        out_channels: 192
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 192
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_2:
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_4: # Outputs (B, 128, 32, 32, 32)
+      conv_1:
+        in_channels: 384
+        out_channels: 192
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 192
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 192
+        out_channels: 128
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 128
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_2:
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_5: # Outputs (B, 96, 64, 64, 64)
+      conv_1:
+        in_channels: 256
+        out_channels: 128
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 128
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 128
+        out_channels: 96
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 96
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_2:
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_6: # Outputs (B, 64, 128, 128, 128)
+      conv_1:
+        in_channels: 192
+        out_channels: 96
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 96
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 96
+        out_channels: 64
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 64
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      upsampling_2:
+        mode: trilinear
+        scale_factor: 2
+    conv_3D_block_7: # Outputs (B, 2, 128, 128, 128)
+      conv_1:
+        in_channels: 128
+        out_channels: 64
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_1:
+        type: InstanceNorm3D
+        num_features: 64
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_1:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_2:
+        in_channels: 64
+        out_channels: 64
+        kernel_size: [3, 3, 3]
+        stride: [1, 1, 1]
+        padding: 1
+      normalization_2:
+        type: InstanceNorm3D
+        num_features: 64
+        eps: 1.e-05
+        momentum: 0.1
+        affine: true
+      activation_2:
+        type: LeakyReLU
+        negative_slope: 0.1
+      conv_3:
+        in_channels: 64
+        out_channels: 3 # Tumor Classes - Does not consider background
+        kernel_size: [1, 1, 1]
+        stride: [1, 1, 1]
+        padding: 0
+        bias: true
+  skip_connections:
+    # Without skip connections for depth 6 and 7
+    skip_1: null
+    skip_2: null
+    skip_3: null
+    skip_4: null
+    skip_5: null

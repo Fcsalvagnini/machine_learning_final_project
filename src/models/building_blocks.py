@@ -7,7 +7,7 @@ class Conv3DBlock(nn.Module):
             self, in_channels: int, out_channels: int,
             kernel_size: Union[int, tuple], stride: Union[int, tuple] = 1,
             padding: Union[int, tuple] = 0, padding_mode: str = "zeros",
-            bias: bool = True, normalization: nn.Module = None,
+            bias: bool = False, normalization: nn.Module = None,
             activation: nn.Module = None, upsampling: nn.Module = None
     ) -> None:
         super().__init__()

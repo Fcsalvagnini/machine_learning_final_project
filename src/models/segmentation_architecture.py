@@ -75,7 +75,7 @@ class SegmentationModel(nn.Module):
                 layers_by_level.append(
                     block_layer(
                         **conv_parameters, normalization=normalization, activation=activation, upsampling=upsampling
-                    )
+                    )._initialize_weights()
                 )
             layers_by_level = nn.ModuleList(layers_by_level)
 
@@ -101,7 +101,6 @@ class SegmentationModel(nn.Module):
                     x = torch.concat([x, intermediate_representation], dim=1)
                     first_block = False
                 x = decoder_block.forward(x)
-        #print(x.shape)
 
         return x
 

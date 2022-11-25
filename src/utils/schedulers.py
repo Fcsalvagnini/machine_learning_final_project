@@ -2,7 +2,7 @@ from monai import optimizers as monai_lr_schedulers
 from torch.optim import lr_scheduler
 
 
-def get_scheduler(scheduler_fn, optimizer, from_monai=False, **kwargs):
+def get_scheduler(scheduler_fn, optimizer, t_total, from_monai=False, **kwargs):
     """
     Create an learning rate scheduler object from monai or PyTorch libs
     Args:
@@ -14,4 +14,4 @@ def get_scheduler(scheduler_fn, optimizer, from_monai=False, **kwargs):
     libname = lr_scheduler
     if from_monai:
         libname = monai_lr_schedulers
-    return getattr(libname, scheduler_fn)(optimizer, **kwargs)
+    return getattr(libname, scheduler_fn)(optimizer, t_total=t_total, **kwargs)

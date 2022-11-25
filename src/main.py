@@ -31,7 +31,7 @@ from src.dali_dataloader.pipelines import DaliFullPipeline
 
 from torch.utils.data import DataLoader
 
-def run_train_epoch(model, optimizer, loss, dice_metric, pipeline,
+def run_train_epoch(model, optimizer, scheduler, loss, dice_metric, pipeline,
         monitoring_metrics, epoch
     ):
     model.train()
@@ -65,6 +65,8 @@ def run_train_epoch(model, optimizer, loss, dice_metric, pipeline,
             progress_bar.set_postfix(
                 desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
             )
+
+            scheduler.step()
 
     epoch_loss = (running_loss / steps).detach().numpy()
     epoch_dice = (running_dice / steps).detach().numpy()
@@ -136,7 +138,7 @@ def train_loop(model, train_pipeline, validation_pipeline, optmizer, loss,
 
     for epoch in range(1, train_configs.epochs + 1):
         run_train_epoch(
-            model, optmizer, loss, dice_metric, train_pipeline, monitoring_metrics,
+            model, optmizer, scheduler, loss, dice_metric, train_pipeline, monitoring_metrics,
             epoch
         )
         train_pipeline.reset()
@@ -153,8 +155,6 @@ def train_loop(model, train_pipeline, validation_pipeline, optmizer, loss,
                 monitoring_metrics["dice"]["validation"][-1]
                 ]
         )
-
-        #scheduler.step(monitoring_metrics["loss"]["validation"][-1])
 
     # [ ] - run.log or wandb.log
     #run.log(
@@ -212,7 +212,19 @@ def train(configs: Dict) -> None:
     optmizer = OPTIMIZERS[train_configs.optimizer["name"]](
         model.parameters(), **train_configs.optimizer["parameters"]
     )
-    scheduler=None
+
+    scheduler = get_scheduler(
+        scheduler_fn=train_configs.scheduler.scheduler_fn,
+        optimizer=optmizer,
+        t_total=train_configs.epochs * int(
+            np.ceil(
+                train_pipeline.nift_iterator.dataset_len \
+                    / train_configs.batch_size
+            )
+        ),
+        from_monai=train_configs.scheduler.from_monai,
+        **train_configs.scheduler.scheduler_kwargs
+    )
 
     train_loop(
         model, train_pipeline, validation_pipeline, optmizer, loss, dice_metric,

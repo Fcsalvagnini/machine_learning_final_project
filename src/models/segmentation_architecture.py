@@ -75,8 +75,9 @@ class SegmentationModel(nn.Module):
                 layers_by_level.append(
                     block_layer(
                         **conv_parameters, normalization=normalization, activation=activation, upsampling=upsampling
-                    )._initialize_weights()
+                    )
                 )
+                layers_by_level[-1]._initialize_weights()
             layers_by_level = nn.ModuleList(layers_by_level)
 
             layers.extend([layers_by_level])

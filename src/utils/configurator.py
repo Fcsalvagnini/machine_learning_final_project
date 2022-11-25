@@ -42,8 +42,13 @@ class DatasetConfigs(Configurations):
         self.data_path: str = ""
         self.data_descriptors_path: str = ""
         self.phase: str = ""
-        self.voxel_homog_size: int = 128
-        self.transforms: Configurations = AugmentationsConfigs(configurations={})
+        self.n_modalities: int = 2
+        self.batch_size: int = 2
+        self.num_threads: int = 4
+        self.device_id: int = 0
+        self.patch_size: list = [128, 128, 128]
+        self.crop: bool = True
+        self.evaluate: bool = False
 
         self.setattrs(configurations=configurations)
 

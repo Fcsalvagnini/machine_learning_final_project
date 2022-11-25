@@ -24,44 +24,54 @@ from src.utils.schedulers import get_scheduler
 from src.utils.callbacks import SaveBestModel
 from src.metrics.dice import DiceMetric
 from src.utils.csv.csv_writter import CsvWritter
+from src.dali_dataloader.pipelines import DaliFullPipeline
 
 #from src.utils.wandb.runner import WandbArtifactRunner
 #from src.utils.wandb.logger import WandbLogger
 
 from torch.utils.data import DataLoader
 
-def run_train_epoch(model, optimizer, loss, dice_metric, dataloader, monitoring_metrics,
-                epoch):
+def run_train_epoch(model, optimizer, loss, dice_metric, pipeline,
+        monitoring_metrics, epoch
+    ):
     model.train()
     model.to("cuda")
     running_loss = 0
     running_dice = 0
 
-    with trange(len(dataloader), desc="Train Loop") as progress_bar:
-        for batch_idx, batch in zip(progress_bar, dataloader):
-            volumetric_image, segmentation_mask = [
-                data.to("cuda") for data in batch
-            ]
+    steps = int(
+        np.ceil(pipeline.nift_iterator.dataset_len / pipeline.batch_size)
+    )
+
+    with trange(steps, desc="Train Loop") as progress_bar:
+        for batch_idx in progress_bar:
+            volumetric_images, segmentation_masks = pipeline.run()
+            volumetric_images = torch.Tensor(
+                volumetric_images.as_cpu().as_array()
+            ).to("cuda")
+            segmentation_masks = torch.Tensor(
+                segmentation_masks.as_cpu().as_array()
+            ).to("cuda")
             optimizer.zero_grad()
-            predicted_segmentation = model(volumetric_image)
+            predicted_segmentation = model(volumetric_images)
             
-            batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
+            batch_loss = loss.forward(predicted_segmentation, segmentation_masks)
             batch_loss.backward()
             optimizer.step()
 
             running_loss += batch_loss.cpu()
-            running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_mask)).cpu()
+            running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_masks)).cpu()
 
             progress_bar.set_postfix(
                 desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
             )
 
-    epoch_loss = (running_loss / len(dataloader)).detach().numpy()
-    epoch_dice = (running_dice / len(dataloader)).detach().numpy()
+    epoch_loss = (running_loss / steps).detach().numpy()
+    epoch_dice = (running_dice / steps).detach().numpy()
     monitoring_metrics["loss"]["train"].append(epoch_loss)
     monitoring_metrics["dice"]["train"].append(epoch_dice)
 
-def run_validation_epoch(model, loss, dice_metric, dataloader,
+def run_validation_epoch(model, loss, dice_metric, pipeline,
                 monitoring_metrics, epoch, configurations, 
                 save_best_model):
     with torch.no_grad():
@@ -73,29 +83,41 @@ def run_validation_epoch(model, loss, dice_metric, dataloader,
         running_loss = 0
         running_dice = 0
 
-        with trange(len(dataloader), desc="Validation Loop") as progress_bar:
-            for batch_idx, batch in zip(progress_bar, dataloader):
-                volumetric_image, segmentation_mask = [
-                    data.to("cuda") for data in batch[0]
-                ]
-                predicted_segmentation = model(volumetric_image)
-                batch_loss = loss.forward(predicted_segmentation, segmentation_mask)
+        steps = int(
+            np.ceil(pipeline.nift_iterator.dataset_len / pipeline.batch_size)
+        )
+
+        with trange(steps, desc="Validation Loop") as progress_bar:
+            for batch_idx in progress_bar:
+                volumetric_images, segmentation_masks = pipeline.run()
+                volumetric_images = torch.Tensor(
+                    volumetric_images.as_cpu().as_array()
+                ).to("cuda")
+                segmentation_masks = torch.Tensor(
+                    segmentation_masks.as_cpu().as_array()
+                ).to("cuda")
+                predicted_segmentation = model(volumetric_images)
+                batch_loss = loss.forward(predicted_segmentation, segmentation_masks)
 
                 running_loss += batch_loss.cpu()
-                running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_mask)).cpu()
+                running_dice += torch.mean(
+                    dice_metric.compute(
+                        predicted_segmentation, segmentation_masks
+                    )
+                ).cpu()
 
                 progress_bar.set_postfix(
                     desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
                 )
 
-    epoch_loss = (running_loss / len(dataloader)).detach().numpy()
-    epoch_dice = (running_dice / len(dataloader)).detach().numpy()
+    epoch_loss = (running_loss / steps).detach().numpy()
+    epoch_dice = (running_dice / steps).detach().numpy()
     monitoring_metrics["loss"]["validation"].append(epoch_loss)
     monitoring_metrics["dice"]["validation"].append(epoch_dice)
 
     save_best_model(epoch_loss, epoch, model, configurations)
 
-def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
+def train_loop(model, train_pipeline, validation_pipeline, optmizer, loss,
             dice_metric, scheduler, train_configs):
     os.makedirs(train_configs.checkpoints_path, exist_ok=True)
     monitoring_metrics = {
@@ -114,13 +136,15 @@ def train_loop(model, train_dataloader, validation_dataloader, optmizer, loss,
 
     for epoch in range(1, train_configs.epochs + 1):
         run_train_epoch(
-            model, optmizer, loss, dice_metric, train_dataloader, monitoring_metrics,
+            model, optmizer, loss, dice_metric, train_pipeline, monitoring_metrics,
             epoch
         )
+        train_pipeline.reset()
         run_validation_epoch(
-            model, loss, dice_metric, validation_dataloader, monitoring_metrics,
+            model, loss, dice_metric, validation_pipeline, monitoring_metrics,
             epoch, train_configs, save_best_model
         )
+        validation_pipeline.reset()
         csv_writer.write_line(
             content=[
                 epoch, monitoring_metrics["loss"]["train"][-1],
@@ -153,24 +177,15 @@ def train(configs: Dict) -> None:
         [ ] -  Get lattest wandb_experiment_id with same wandb_experiment_name
         [ ] -  
     """
-    train_dataset_configs = DatasetConfigs(configs["train_configs"]["data_loader"]["dataset"])
-    train_dataset = BrainDataset(
-        cfg=train_dataset_configs,
-        phase="train",
-        num_concat=2
-    )
-    validation_dataset = BrainDataset(
-        cfg=train_dataset_configs,
-        phase="validation",
-        num_concat=2
-    )
+    train_pipeline_configs = configs["train_configs"]["data_loader"]["dataset"]
+    train_pipeline_configs["phase"] = "train"
+    validation_pipeline_configs = train_pipeline_configs.copy()
+    validation_pipeline_configs["phase"] = "validation"
 
-    train_dataloader = DataLoader(
-        train_dataset, batch_size=train_configs.batch_size
-    )
-    validation_dataloader = DataLoader(
-        validation_dataset, batch_size=train_configs.batch_size
-    )
+    train_pipeline = DaliFullPipeline(**train_pipeline_configs)
+    train_pipeline.build()
+    validation_pipeline = DaliFullPipeline(**validation_pipeline_configs)
+    validation_pipeline.build()
 
     logging.basicConfig(
         stream=sys.stdout,
@@ -200,7 +215,7 @@ def train(configs: Dict) -> None:
     scheduler=None
 
     train_loop(
-        model, train_dataloader, validation_dataloader, optmizer, loss, dice_metric,
+        model, train_pipeline, validation_pipeline, optmizer, loss, dice_metric,
         scheduler, train_configs
     )
 

@@ -298,17 +298,17 @@ def validate(configs: Dict):
     validation_pipeline_configs = train_pipeline_configs.copy()
     validation_pipeline_configs["phase"] = "validation"
     validation_pipeline_configs["batch_size"] = 1
-    train_pipeline_configs["crop"] = False
+    validation_pipeline_configs["crop"] = False
     test_pipeline_configs = train_pipeline_configs.copy()
     test_pipeline_configs["phase"] = "test"
     test_pipeline_configs["batch_size"] = 1
-    train_pipeline_configs["crop"] = False
+    test_pipeline_configs["crop"] = False
 
     train_pipeline = DaliFullPipeline(**train_pipeline_configs)
     train_pipeline.build()
     validation_pipeline = DaliFullPipeline(**validation_pipeline_configs)
     validation_pipeline.build()
-    test_pipeline = DaliFullPipeline(**train_pipeline_configs)
+    test_pipeline = DaliFullPipeline(**test_pipeline_configs)
     test_pipeline.build()
 
     checkpoint_path = configs["train_configs"]["checkpoint"]

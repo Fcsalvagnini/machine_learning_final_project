@@ -270,8 +270,9 @@ def evaluate(model, pipeline, phase):
                 segmentation_masks = torch.Tensor(
                     segmentation_masks.as_cpu().as_array()
                 ).to("cuda")
-                predicted_segmentation = model(volumetric_images)
 
+
+                predicted_segmentation = sliding_window_inference(volumetric_images, [128, 128, 128], 1, model)
                 dice = torch.mean(
                     dice_calculator.compute(
                         predicted_segmentation, segmentation_masks
@@ -279,6 +280,9 @@ def evaluate(model, pipeline, phase):
                 ).cpu()
 
                 image_id = pipeline.nift_iterator.seen_data[batch_idx]
+                prediction_save_path = f"predictions/{image_id}_pred_seg.nii.gz"
+                save_prediction(predicted_segmentation, prediction_save_path)
+
                 to_csv.append([image_id, dice])
 
     with open(f"model_{phase}.csv", "w") as csvfile:

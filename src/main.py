@@ -246,23 +246,12 @@ def save_prediction(image, path_to_save):
     niivol.to_filename(path_to_save)
 
 
-def validate(configs: Dict):
-    torch.cuda.set_device(1)
-    train_configs = TrainConfigs(configs["train_configs"])
-    validation_configs = ValidationConfigs(configs["validation_configs"])
-    validation_dataset_configs = DatasetConfigs(configs["validation_configs"]["data_loader"]["dataset"])
-    validation_test_dataset = BrainDataset(
-        cfg=validation_dataset_configs,
-        phase="validation_test",
-        num_concat=2
-    )
-    validation_test_dataloader = DataLoader(
-        validation_test_dataset, batch_size=1
-    )
-
-    model = get_model(configs)
-    model.load_state_dict(torch.load(validation_configs.checkpoint_path))
+def evaluate(model, pipeline, phase):
     dice_calculator = DiceMetric(3, True)
+
+    steps = int(
+        np.ceil(pipeline.nift_iterator.dataset_len)
+    )
 
     with torch.no_grad():
         torch.cuda.empty_cache()
@@ -270,21 +259,62 @@ def validate(configs: Dict):
 
         model.to("cuda")
         model.eval()
-        to_csv = [["image_path", "dice_score"]]
+        to_csv = [["image_id", "dice_score"]]
 
-        for image in tqdm(validation_test_dataloader):
-            (x, y), path = image
-            prediction = sliding_window_inference(x.to("cuda"), [128, 128, 128], 1, model)
-            dice_pred = torch.mean(dice_calculator.compute(prediction, y.to("cuda")))
-            prediction_save_path = f"{path[0]}_pred_seg.nii.gz"
-            folder_path = os.path.join(*prediction_save_path.split("/")[:-1])
-            save_prediction(prediction, prediction_save_path)
+        with trange(steps, desc="Validation Loop") as progress_bar:
+            for batch_idx in progress_bar:
+                volumetric_images, segmentation_masks = pipeline.run()
+                volumetric_images = torch.Tensor(
+                    volumetric_images.as_cpu().as_array()
+                ).to("cuda")
+                segmentation_masks = torch.Tensor(
+                    segmentation_masks.as_cpu().as_array()
+                ).to("cuda")
+                predicted_segmentation = model(volumetric_images)
 
-            to_csv.append([folder_path, dice_pred.cpu().detach().numpy()])
+                dice = torch.mean(
+                    dice_calculator.compute(
+                        predicted_segmentation, segmentation_masks
+                    )
+                ).cpu()
 
-    with open("best_model_without_aug.csv", "w") as csvfile: 
-        csvwriter = csv.writer(csvfile) 
+                image_id = pipeline.nift_iterator.subject_paths[batch_idx]
+                to_csv.append([image_id, dice])
+
+    with open(f"model_{phase}.csv", "w") as csvfile:
+        csvwriter = csv.writer(csvfile)
         csvwriter.writerows(to_csv)
+
+def validate(configs: Dict):
+    torch.cuda.set_device(1)
+    train_pipeline_configs = configs["train_configs"]["data_loader"]["dataset"]
+    train_pipeline_configs["phase"] = "train"
+    train_pipeline_configs["batch_size"] = 1
+    train_pipeline_configs["crop"] = False
+    validation_pipeline_configs = train_pipeline_configs.copy()
+    validation_pipeline_configs["phase"] = "validation"
+    validation_pipeline_configs["batch_size"] = 1
+    train_pipeline_configs["crop"] = False
+    test_pipeline_configs = train_pipeline_configs.copy()
+    test_pipeline_configs["phase"] = "test"
+    test_pipeline_configs["batch_size"] = 1
+    train_pipeline_configs["crop"] = False
+
+    train_pipeline = DaliFullPipeline(**train_pipeline_configs)
+    train_pipeline.build()
+    validation_pipeline = DaliFullPipeline(**validation_pipeline_configs)
+    validation_pipeline.build()
+    test_pipeline = DaliFullPipeline(**train_pipeline_configs)
+    test_pipeline.build()
+
+    checkpoint_path = configs["train_configs"]["checkpoint"]
+
+    model = get_model(configs)
+    model.load_state_dict(torch.load(checkpoint_path))
+
+    evaluate(model, train_pipeline, "train")
+    evaluate(model, validation_pipeline, "train")
+    evaluate(model, test_pipeline, "train")
 
 
 if __name__ == "__main__":

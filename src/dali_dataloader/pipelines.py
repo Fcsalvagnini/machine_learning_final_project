@@ -278,7 +278,7 @@ class DaliFullPipeline(GenericPipeline):
         label = fn.reshape(label, layout="CDHW")
         if not self.evaluate:
             image, label = self._biased_crop_fn(image, label)
-        if self.phase == "train":
+        if self.phase == "train" and not self.evaluate:
             image, label = self._zoom_fn(image, label)
             image, label = self._flips_fn(image, label)
             image = self._noise_fn(image)

@@ -313,8 +313,8 @@ def validate(configs: Dict):
     model.load_state_dict(torch.load(checkpoint_path))
 
     evaluate(model, train_pipeline, "train")
-    evaluate(model, validation_pipeline, "train")
-    evaluate(model, test_pipeline, "train")
+    evaluate(model, validation_pipeline, "validation")
+    evaluate(model, test_pipeline, "test")
 
 
 if __name__ == "__main__":

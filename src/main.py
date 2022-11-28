@@ -278,7 +278,7 @@ def evaluate(model, pipeline, phase):
                     )
                 ).cpu()
 
-                image_id = pipeline.nift_iterator.subject_paths[batch_idx]
+                image_id = pipeline.nift_iterator.seen_data[batch_idx]
                 to_csv.append([image_id, dice])
 
     with open(f"model_{phase}.csv", "w") as csvfile:

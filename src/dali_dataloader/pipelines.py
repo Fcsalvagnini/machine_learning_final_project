@@ -174,7 +174,7 @@ class GenericPipeline(Pipeline):
 
     def _crop_fn(self, image:torch.Tensor,
             label:torch.Tensor) -> Tuple:
-        image, label = self.crop(image), self.crop(label)
+        image, label = self._crop(image), self._crop(label)
 
         return image, label
 
@@ -277,7 +277,11 @@ class DaliFullPipeline(GenericPipeline):
         image = fn.reshape(image, layout="CDHW")
         label = fn.reshape(label, layout="CDHW")
         if not self.evaluate:
-            image, label = self._biased_crop_fn(image, label)
+            if self.phase == "train":
+                image, label = self._biased_crop_fn(image, label)
+            elif self.phase == "validation":
+                image, label = self._crop_fn(image, label)
+
         if self.phase == "train" and not self.evaluate:
             image, label = self._zoom_fn(image, label)
             image, label = self._flips_fn(image, label)

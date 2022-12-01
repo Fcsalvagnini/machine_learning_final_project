@@ -27,12 +27,13 @@ autograd. This is a default behavior for Parameter that differs from Tensor.
 """
 
 class SegmentationModel(nn.Module):
-    def __init__(self, model_configs) -> None:
+    def __init__(self, model_configs, deep_supervision) -> None:
         super().__init__()
 
         self.encoder_layers = self.get_layers(model_configs.encoder)
         self.decoder_layers = self.get_layers(model_configs.decoder)
         self.skip_connections = self.get_skip_connections(model_configs.skip_connections)
+        self.deep_supervision = deep_supervision
 
         if len(self.skip_connections) < model_configs.depth:
             diff = model_configs.depth - len(self.skip_connections)
@@ -86,28 +87,38 @@ class SegmentationModel(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         intermediate_representations = []
+        outputs = []
 
         for encoder_layer in self.encoder_layers:
             for encoder_block in encoder_layer:
                 x = encoder_block.forward(x)
             intermediate_representations.append(x)
 
-        for decoder_layer, skip, intermediate_representation in \
-        zip(
-            self.decoder_layers, self.skip_connections[::-1], intermediate_representations[::-1]
-        ):
+        for idx, decoder_layer, skip, intermediate_representation in \
+        enumerate(zip(
+            self.decoder_layers, 
+            self.skip_connections[::-1], intermediate_representations[::-1]
+        )):
             first_block = True
             for decoder_block in decoder_layer:
                 if skip and first_block:
                     x = torch.concat([x, intermediate_representation], dim=1)
                     first_block = False
                 x = decoder_block.forward(x)
+                if self.deep_supervision and idx >= 4:
+                    outputs.append(x)
 
-        return x
+        if not self.deep_supervision:
+            outputs = [x]
 
-def get_model(configs):
+        return outputs
+
+def get_model(configs, deep_supervision=False):
     model_configs = ModelConfigs(configs["model"])
 
-    segmentation_model = SegmentationModel(model_configs=model_configs)
+    segmentation_model = SegmentationModel(
+        model_configs=model_configs,
+        deep_supervision=deep_supervision
+    )
 
     return segmentation_model

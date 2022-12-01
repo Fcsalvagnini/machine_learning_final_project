@@ -1,7 +1,7 @@
 # Report about the removal of the background
 train_configs:
   checkpoint: checkpoints_nnu_net_nvidia_normalized_non_bias_augmented_scheduler/nnU-Net_Nvidia_non_bias_augmented_scheduler_epoch_189_loss_0.233981654047966.pth
-  deep_supervision: false
+  deep_supervision: true
   wandb_info:
     wandb_entity: mlpf-mls
     wandb_project: brats-2021

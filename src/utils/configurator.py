@@ -76,6 +76,7 @@ class TrainConfigs(Configurations):
     def __init__(self, configurations: Dict) -> None:
         self.model_tag: str = ""
         self.checkpoints_path: str = ""
+        self.deep_supervision: bool = False
         self.epochs: int = 100
         self.batch_size: int = 8
         self.loss: dict = {}

@@ -1,5 +1,6 @@
 from typing import Dict
 import torch
+from torch.nn.functional import interpolate
 import logging
 import argparse
 import numpy as np
@@ -30,6 +31,25 @@ from src.dali_dataloader.pipelines import DaliFullPipeline
 #from src.utils.wandb.logger import WandbLogger
 
 from torch.utils.data import DataLoader
+
+def compute_loss(predictions, ground_truth, loss):
+    loss_scalar = loss.foward(predictions, ground_truth)
+
+    if len(predictions) > 1:
+        downsampled_ground_truth = ground_truth
+        for idx, prediction in enumerate(predictions[1:]):
+            downsampled_ground_truth = interpolate(
+                input=downsampled_ground_truth,
+                size=prediction.shape[2:],
+                mode="nearest"
+            )
+            loss_scalar += 0.5 ** (idx + 1) \
+                        * loss.forward(prediction, downsampled_ground_truth)
+
+        normalization_factor = 1 / (2 - 2 ** (-len(predictions[1:])))
+        loss_scalar *= normalization_factor
+
+    return loss_scalar
 
 def run_train_epoch(model, optimizer, scheduler, loss, dice_metric, pipeline,
         monitoring_metrics, epoch

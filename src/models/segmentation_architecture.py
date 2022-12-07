@@ -27,13 +27,13 @@ autograd. This is a default behavior for Parameter that differs from Tensor.
 """
 
 class SegmentationModel(nn.Module):
-    def __init__(self, model_configs, deep_supervision) -> None:
+    def __init__(self, model_configs) -> None:
         super().__init__()
 
         self.encoder_layers = self.get_layers(model_configs.encoder)
         self.decoder_layers = self.get_layers(model_configs.decoder)
         self.skip_connections = self.get_skip_connections(model_configs.skip_connections)
-        self.deep_supervision = deep_supervision
+        self.deep_supervision = model_configs.deep_supervision
 
         if len(self.skip_connections) < model_configs.depth:
             diff = model_configs.depth - len(self.skip_connections)
@@ -113,12 +113,11 @@ class SegmentationModel(nn.Module):
 
         return outputs
 
-def get_model(configs, deep_supervision=False):
+def get_model(configs):
     model_configs = ModelConfigs(configs["model"])
 
     segmentation_model = SegmentationModel(
         model_configs=model_configs,
-        deep_supervision=deep_supervision
     )
 
     return segmentation_model

@@ -32,8 +32,8 @@ from src.dali_dataloader.pipelines import DaliFullPipeline
 
 from torch.utils.data import DataLoader
 
-def compute_loss(predictions, ground_truth, loss):
-    loss_scalar = loss.foward(predictions, ground_truth)
+def compute_loss(predictions, ground_truth, loss_fn):
+    loss_value = loss_fn.foward(predictions, ground_truth)
 
     if len(predictions) > 1:
         downsampled_ground_truth = ground_truth
@@ -43,13 +43,13 @@ def compute_loss(predictions, ground_truth, loss):
                 size=prediction.shape[2:],
                 mode="nearest"
             )
-            loss_scalar += 0.5 ** (idx + 1) \
-                        * loss.forward(prediction, downsampled_ground_truth)
+            loss_value += 0.5 ** (idx + 1) \
+                        * loss_fn.forward(prediction, downsampled_ground_truth)
 
         normalization_factor = 1 / (2 - 2 ** (-len(predictions[1:])))
-        loss_scalar *= normalization_factor
+        loss_value *= normalization_factor
 
-    return loss_scalar
+    return loss_value
 
 def run_train_epoch(model, optimizer, scheduler, loss, dice_metric, pipeline,
         monitoring_metrics, epoch
@@ -75,7 +75,9 @@ def run_train_epoch(model, optimizer, scheduler, loss, dice_metric, pipeline,
             optimizer.zero_grad()
             predicted_segmentation = model(volumetric_images)
             
-            batch_loss = loss.forward(predicted_segmentation, segmentation_masks)
+            batch_loss = compute_loss(
+                predicted_segmentation, segmentation_masks, loss_fn=loss
+            )
             batch_loss.backward()
             optimizer.step()
 
@@ -119,7 +121,9 @@ def run_validation_epoch(model, loss, dice_metric, pipeline,
                     segmentation_masks.as_cpu().as_array()
                 ).to("cuda")
                 predicted_segmentation = model(volumetric_images)
-                batch_loss = loss.forward(predicted_segmentation, segmentation_masks)
+                batch_loss = compute_loss(
+                    predicted_segmentation, segmentation_masks, loss_fn=loss
+                )
 
                 running_loss += batch_loss.cpu()
                 running_dice += torch.mean(

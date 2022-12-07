@@ -33,7 +33,7 @@ from src.dali_dataloader.pipelines import DaliFullPipeline
 from torch.utils.data import DataLoader
 
 def compute_loss(predictions, ground_truth, loss_fn):
-    loss_value = loss_fn.foward(predictions, ground_truth)
+    loss_value = loss_fn.forward(predictions[0], ground_truth)
 
     if len(predictions) > 1:
         downsampled_ground_truth = ground_truth
@@ -82,7 +82,7 @@ def run_train_epoch(model, optimizer, scheduler, loss, dice_metric, pipeline,
             optimizer.step()
 
             running_loss += batch_loss.cpu()
-            running_dice += torch.mean(dice_metric.compute(predicted_segmentation, segmentation_masks)).cpu()
+            running_dice += torch.mean(dice_metric.compute(predicted_segmentation[0], segmentation_masks)).cpu()
 
             progress_bar.set_postfix(
                 desc=f"[Epoch {epoch}] Loss: {running_loss / (batch_idx + 1):.3f} | Dice: {running_dice / (batch_idx + 1):.3f}"
@@ -128,7 +128,7 @@ def run_validation_epoch(model, loss, dice_metric, pipeline,
                 running_loss += batch_loss.cpu()
                 running_dice += torch.mean(
                     dice_metric.compute(
-                        predicted_segmentation, segmentation_masks
+                        predicted_segmentation[0], segmentation_masks
                     )
                 ).cpu()
 

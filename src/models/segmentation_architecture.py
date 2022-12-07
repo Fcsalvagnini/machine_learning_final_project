@@ -94,7 +94,7 @@ class SegmentationModel(nn.Module):
                 x = encoder_block.forward(x)
             intermediate_representations.append(x)
 
-        for idx, decoder_layer, skip, intermediate_representation in \
+        for idx, (decoder_layer, skip, intermediate_representation) in \
         enumerate(zip(
             self.decoder_layers, 
             self.skip_connections[::-1], intermediate_representations[::-1]

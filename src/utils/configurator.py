@@ -118,6 +118,7 @@ class ModelConfigs(Configurations):
         self.encoder: LayersConfigurations = LayersConfigurations(configurations={})
         self.decoder: LayersConfigurations = LayersConfigurations(configurations={})
         self.skip_connections: LayersConfigurations = LayersConfigurations(configurations={})
+        self.deep_supervision: bool = False
 
         self.setattrs(configurations=configurations)
 

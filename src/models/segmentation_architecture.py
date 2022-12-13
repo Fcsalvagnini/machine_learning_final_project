@@ -109,9 +109,11 @@ class SegmentationModel(nn.Module):
                     outputs.append(x)
 
         if not self.deep_supervision:
-            outputs = [x]
+            outputs = x
+        else:
+            outputs[::-1]
 
-        return outputs[::-1]
+        return outputs
 
 def get_model(configs):
     model_configs = ModelConfigs(configs["model"])

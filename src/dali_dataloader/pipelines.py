@@ -176,7 +176,7 @@ class GenericPipeline(Pipeline):
             label:torch.Tensor) -> Tuple:
         image, label = self._crop(image), self._crop(label)
 
-        return image, label
+        return image.gpu(), label.gpu()
 
 class DaliFullPipeline(GenericPipeline):
     def __init__(self, data_path:str, data_descriptors_path:str,

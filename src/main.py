@@ -289,14 +289,14 @@ def evaluate(model, pipeline, phase):
             for batch_idx in progress_bar:
                 volumetric_images, segmentation_masks = pipeline.run()
                 volumetric_images = torch.Tensor(
-                    volumetric_images.as_cpu().as_array()
+                    volumetric_images.as_array()
                 ).to("cuda")
                 segmentation_masks = torch.Tensor(
-                    segmentation_masks.as_cpu().as_array()
+                    segmentation_masks.as_array()
                 ).to("cuda")
 
 
-                predicted_segmentation = sliding_window_inference(volumetric_images, [128, 128, 128], 1, model)
+                predicted_segmentation = sliding_window_inference(volumetric_images, [128, 128, 128], 1, model, overlap=0.5, mode="gaussian")
                 dice = torch.mean(
                     dice_calculator.compute(
                         predicted_segmentation, segmentation_masks
@@ -307,7 +307,7 @@ def evaluate(model, pipeline, phase):
                 prediction_save_path = f"predictions/{image_id}_pred_seg.nii.gz"
                 save_prediction(predicted_segmentation, prediction_save_path)
 
-                to_csv.append([image_id, dice])
+                to_csv.append([image_id, float(dice)])
 
     with open(f"model_{phase}.csv", "w") as csvfile:
         csvwriter = csv.writer(csvfile)

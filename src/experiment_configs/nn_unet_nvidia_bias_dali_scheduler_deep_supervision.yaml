@@ -1,6 +1,6 @@
 # Report about the removal of the background
 train_configs:
-  checkpoint: checkpoints_nn_unet_nvidia_bias_dali_scheduler_deep_supervision/xxxx.pth
+  checkpoint: checkpoints_nn_unet_nvidia_bias_dali_scheduler_deep_supervision/nnU-Net_Nvidia_non_bias_augmented_scheduler_deep_supervision_epoch_182_loss_1.5616832971572876.pth
   wandb_info:
     wandb_entity: mlpf-mls
     wandb_project: brats-2021
@@ -33,12 +33,12 @@ train_configs:
       num_threads: 1
       device_id: 1
       patch_size: [128, 128, 128]
-      crop: true
-      evaluate: false
+      crop: false 
+      evaluate: true
 
 validation_configs:
   model_tag: nnU-Net_Nvidia_bias_fixed
-  checkpoint_path: "checkpoints_nn_unet_nvidia_bias_dali_scheduler_deep_supervision/xxxx.pth"
+  checkpoint_path: "checkpoints_nn_unet_nvidia_bias_dali_scheduler_deep_supervision/nnU-Net_Nvidia_non_bias_augmented_scheduler_deep_supervision_epoch_182_loss_1.5616832971572876.pth"
   data_loader:
     dataset:
       data_path: "../../datasets/RSNA_ASNR_MICCAI_BraTS2021_TrainingData_16July2021"
@@ -47,7 +47,7 @@ validation_configs:
 model:
   name: nvidia_nnunet
   depth: 7
-  deep_supervision: true
+  deep_supervision: false 
   encoder:
     # Input Full-kernel_size or Patch kernel_size Image Modalities (B, M, C, H, W) e.g. (2, 2, 128, 128, 128)
     conv_3D_block_1: # Outputs (B, 64, 128, 128, 128)
